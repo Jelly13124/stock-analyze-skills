@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stock Financial Statements"
+  short_description: "Analyze income statement, balance sheet, cash flow, and earnings"
+  default_prompt: "Analyze financial statements and earnings quality for a stock."

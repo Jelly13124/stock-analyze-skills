@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stock Analysis"
+  short_description: "Create SOP-driven stock reports in Markdown or DOCX"
+  default_prompt: "Analyze a stock using the requested report depth and output format. If unclear, ask for depth, format, and objective first."

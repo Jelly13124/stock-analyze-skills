@@ -1,0 +1,24 @@
+# Local API keys and secrets
+key.txt
+keys.txt
+api_keys.txt
+.env
+.env.*
+*.pem
+*.key
+
+# Generated reports / local outputs
+outputs/
+reports/
+*.log
+
+# Python/cache artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

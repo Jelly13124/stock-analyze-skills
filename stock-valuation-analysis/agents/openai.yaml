@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stock Valuation Analysis"
+  short_description: "Build relative and intrinsic valuation with target ranges"
+  default_prompt: "Estimate valuation, target price ranges, and margin of safety for a stock."
