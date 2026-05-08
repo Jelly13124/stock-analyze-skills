@@ -47,10 +47,6 @@ stock_analyze/
     agents/openai.yaml
 ```
 
-Generated reports, chart outputs, cache files, and API key files are intentionally ignored by Git.
-
-报告输出、图表输出、缓存文件和 API key 文件不会进入 Git。
-
 ## Skill Architecture / Skill 架构
 
 | Skill | 中文职责 | English Role |
