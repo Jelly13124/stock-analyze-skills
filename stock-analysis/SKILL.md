@@ -1,6 +1,6 @@
 ---
 name: stock-analysis
-description: Use when a user asks to analyze a public stock, ETF, company, ticker, target price, trading strategy, investment thesis, valuation, technicals, earnings, fundamentals, macro backdrop, risk, or asks for a professional Markdown or DOCX stock report; trigger on bare tickers such as NVDA, TSLA, META, AAPL, "analyze", "price target", "short-term strategy", "medium-term strategy", "full report", "md report", or "docx report".
+description: Use when analyzing stocks, ETFs, tickers, target prices, trade strategy, valuation, technicals, earnings, fundamentals, macro risk, or Markdown/DOCX stock reports.
 ---
 
 # Stock Analysis
@@ -12,6 +12,25 @@ Use this as the main orchestrator for SOP-driven US stock analysis. It clarifies
 Always treat financial facts as time-sensitive. Fetch current market data, filings, earnings dates, guidance, news, analyst estimates, macro data, and technical prices when tools or browsing are available. If live data cannot be fetched, state the data limitation clearly and avoid pretending the report is current.
 
 End user-facing reports with: `Not investment advice -- for your own research.`
+
+## Claude.ai Web Compatibility
+
+This skill supports Claude Code, Claude Desktop, Codex, and Claude.ai web. In Claude.ai web, direct network access from Python may be restricted even when web search or web fetch tools work.
+
+Before running `scripts/fetch_price_charts.py`, locate API keys in this order:
+
+1. explicit user-provided path
+2. `./key.txt`
+3. `/mnt/user-data/uploads/key.txt`
+4. `/mnt/data/key.txt`
+
+Run the script normally first. If the output Data Health shows `network_blocked`, `missing_key`, or `all_providers_failed` for quote/daily/weekly/intraday data, use `scripts/web_prefetch_helper.md`:
+
+1. gather quote and OHLCV data with web search / web fetch
+2. write JSON files to `/tmp/prefetched_data`
+3. re-run the same script command, preferably with `--output-dir auto`
+
+Always disclose provider fields in the final report. Mark `prefetched_web` as a secondary source with lower confidence for intraday precision.
 
 ## Request Gate
 
@@ -63,9 +82,10 @@ For DOCX output:
    - technical history sufficient for SMA/EMA, RSI, KDJ, MACD, Bollinger Bands, ATR, support/resistance
 4. Fetch API-based daily, weekly, and requested intraday charts:
    - Use the bundled data script: `scripts/fetch_price_charts.py <TICKER> --key-file <workspace-key-file> --output-dir <workspace>/outputs --benchmark SPY --sector <sector-etf>`.
+   - In Claude.ai web, use `--output-dir auto` so the script writes to a platform-appropriate output directory.
    - When the user specifies or confirms an intraday/K-line window, add `--intraday-window <today|1d|2d|5d|1w|2w|1m|3m> --intraday-resolution <1|5|15|30|60>`.
    - Intraday source defaults to Yahoo chart current-session bars because that is sufficient for K-line/KDJ/volume analysis and avoids repeated failures from realtime-only candle endpoints. Use `--intraday-source auto` or `--intraday-source finnhub` only when the user explicitly asks for a realtime-capable candle source.
-   - This is currently the only bundled data script. It fetches data and generates artifacts only: quote status, daily/weekly OHLCV-derived indicators, optional intraday candle-derived indicators, daily/weekly/intraday PNG charts, benchmark/sector relative strength data, volume ratios, support/resistance distances, KDJ cross events, indicator metadata, and a `technical_data_summary`.
+   - This is currently the only bundled data script. It uses `scripts/data_provider.py` to choose direct API, prefetched web JSON, or yfinance data, then generates artifacts only: quote status, daily/weekly OHLCV-derived indicators, optional intraday candle-derived indicators, daily/weekly/intraday PNG charts, benchmark/sector relative strength data, volume ratios, support/resistance distances, KDJ cross events, indicator metadata, and a `technical_data_summary`.
    - KDJ values are computed from OHLCV high/low/close bars. Daily/weekly KDJ is completed-bar close-based. Intraday KDJ is candle-based from the selected intraday source. Always describe `intraday.source`, `data_quality`, `has_intraday_today`, `usable_for_report`, latest bar timestamp, resolution, and window. Do not frame `is_realtime=false` as a data failure when `usable_for_report=true`; simply state that the chart is current-session or delayed bars rather than exchange-direct realtime.
    - Charts should include candlesticks, volume, KDJ, support/resistance lines, and detected KDJ golden/death crosses when data is available.
    - The script must not make recommendations or label a setup bullish/bearish. Skills interpret its data by priority: trend structure, relative strength, volume, support/resistance, then indicator confirmation.

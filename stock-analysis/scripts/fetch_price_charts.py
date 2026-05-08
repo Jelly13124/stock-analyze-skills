@@ -2,11 +2,10 @@
 """
 Fetch quote, daily/weekly/intraday OHLCV, technical indicators, and optional PNG charts.
 
-Data sources:
-- Finnhub quote when FINNHUB_API_KEY is available.
-- Yahoo chart for default intraday OHLCV because it reliably returns current-session bars.
-- Finnhub candles only when explicitly requested or when --intraday-source auto is used.
-- Alpha Vantage daily/weekly time series when ALPHA_VANTAGE_API_KEY is available.
+Data sources are selected by scripts/data_provider.py:
+- Direct API when network/API keys are available.
+- Prefetched JSON written by Claude web tools in sandboxed environments.
+- Optional yfinance fallback when installed.
 
 This script avoids printing API keys. It writes:
 - {TICKER}_technical_bundle.json
@@ -20,284 +19,17 @@ from __future__ import annotations
 import argparse
 import json
 import math
-import os
-import re
-import sys
-import time
-import urllib.parse
-import urllib.request
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
-
-def load_keys(path: str | None) -> dict[str, str]:
-    keys: dict[str, str] = {}
-    for name in ("FINNHUB_API_KEY", "ALPHA_VANTAGE_API_KEY", "FRED_API_KEY"):
-        if os.environ.get(name):
-            keys[name] = os.environ[name].strip()
-    if path:
-        text = Path(path).read_text(encoding="utf-8")
-        for line in text.splitlines():
-            match = re.match(
-                r"\s*([A-Z0-9_]+|finnhub|av|alpha[_ -]?vantage|fred)\s*[:=]\s*(.+?)\s*$",
-                line,
-                re.I,
-            )
-            if not match:
-                continue
-            name = match.group(1).upper()
-            if name == "FINNHUB":
-                name = "FINNHUB_API_KEY"
-            if name == "AV" or name.startswith("ALPHA"):
-                name = "ALPHA_VANTAGE_API_KEY"
-            if name == "FRED":
-                name = "FRED_API_KEY"
-            keys[name] = match.group(2).strip().strip("\"'")
-    return keys
-
-
-def sanitize_text(text: str | None, secrets: list[str] | tuple[str, ...] = ()) -> str | None:
-    if text is None:
-        return None
-    safe = str(text)
-    for secret in secrets:
-        if secret:
-            safe = safe.replace(secret, "[REDACTED]")
-    safe = re.sub(r"(API key as )([A-Za-z0-9_-]+)", r"\1[REDACTED]", safe, flags=re.I)
-    safe = re.sub(r"((?:apikey|token)=)[^&\s]+", r"\1[REDACTED]", safe, flags=re.I)
-    return safe
-
-
-def get_json(url: str) -> dict:
-    request = urllib.request.Request(url, headers={"User-Agent": "stock-analysis-skill/1.0"})
-    with urllib.request.urlopen(request, timeout=30) as response:
-        return json.loads(response.read().decode("utf-8"))
-
-
-def finnhub_quote(symbol: str, key: str | None) -> dict:
-    if not key:
-        return {"status": "missing_key"}
-    url = "https://finnhub.io/api/v1/quote?" + urllib.parse.urlencode({"symbol": symbol, "token": key})
-    try:
-        quote = get_json(url)
-        if quote.get("t"):
-            quote["timestamp_utc"] = datetime.fromtimestamp(int(quote["t"]), tz=timezone.utc).isoformat()
-        quote["status"] = "ok"
-        return quote
-    except Exception as exc:  # noqa: BLE001 - script should report data health, not crash.
-        return {"status": "error", "error": type(exc).__name__}
-
-
-def finnhub_candles(symbol: str, key: str | None, resolution: str, from_ts: int, to_ts: int) -> dict:
-    if not key:
-        return {"status": "missing_key", "rows": []}
-    url = "https://finnhub.io/api/v1/stock/candle?" + urllib.parse.urlencode(
-        {
-            "symbol": symbol,
-            "resolution": resolution,
-            "from": from_ts,
-            "to": to_ts,
-            "token": key,
-        }
-    )
-    try:
-        data = get_json(url)
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "error": type(exc).__name__, "rows": []}
-
-    if data.get("s") != "ok":
-        return {
-            "status": data.get("s") or "notice",
-            "notice": sanitize_text(data.get("error") or data.get("s") or "no intraday candle data", [key]),
-            "rows": [],
-            "resolution": resolution,
-            "from_utc": datetime.fromtimestamp(from_ts, tz=timezone.utc).isoformat(),
-            "to_utc": datetime.fromtimestamp(to_ts, tz=timezone.utc).isoformat(),
-        }
-
-    rows = []
-    for open_, high, low, close, volume, timestamp in zip(
-        data.get("o", []),
-        data.get("h", []),
-        data.get("l", []),
-        data.get("c", []),
-        data.get("v", []),
-        data.get("t", []),
-    ):
-        timestamp_utc = datetime.fromtimestamp(int(timestamp), tz=timezone.utc).isoformat()
-        rows.append(
-            {
-                "date": timestamp_utc,
-                "timestamp_utc": timestamp_utc,
-                "open": float(open_),
-                "high": float(high),
-                "low": float(low),
-                "close": float(close),
-                "volume": float(volume),
-            }
-        )
-    rows.sort(key=lambda row: row["date"])
-    return {
-        "status": "ok",
-        "rows": rows,
-        "resolution": resolution,
-        "from_utc": datetime.fromtimestamp(from_ts, tz=timezone.utc).isoformat(),
-        "to_utc": datetime.fromtimestamp(to_ts, tz=timezone.utc).isoformat(),
-    }
-
-
-def alpha_vantage_series(symbol: str, function: str, key: str | None) -> dict:
-    if not key:
-        return {"status": "missing_key", "rows": []}
-    url = "https://www.alphavantage.co/query?" + urllib.parse.urlencode(
-        {"function": function, "symbol": symbol, "outputsize": "compact", "apikey": key}
-    )
-    try:
-        data = get_json(url)
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "error": type(exc).__name__, "rows": []}
-    if data.get("Note") or data.get("Information") or data.get("Error Message"):
-        return {
-            "status": "notice",
-            "notice": sanitize_text(data.get("Note") or data.get("Information") or data.get("Error Message"), [key]),
-            "rows": [],
-        }
-    key_name = "Time Series (Daily)" if "DAILY" in function else "Weekly Time Series"
-    series = data.get(key_name, {})
-    rows = []
-    for date, values in series.items():
-        close_key = "4. close"
-        volume_key = "5. volume"
-        rows.append(
-            {
-                "date": date,
-                "open": float(values["1. open"]),
-                "high": float(values["2. high"]),
-                "low": float(values["3. low"]),
-                "close": float(values[close_key]),
-                "volume": float(values.get(volume_key, 0)),
-            }
-        )
-    rows.sort(key=lambda row: row["date"])
-    return {"status": "ok", "rows": rows, "source": "alpha_vantage"}
-
-
-def alpha_vantage_intraday_series(symbol: str, interval: str, key: str | None, window_seconds: int | None = None) -> dict:
-    if not key:
-        return {"status": "missing_key", "rows": []}
-    outputsize = "full" if window_seconds and window_seconds > 2 * 24 * 60 * 60 else "compact"
-    url = "https://www.alphavantage.co/query?" + urllib.parse.urlencode(
-        {
-            "function": "TIME_SERIES_INTRADAY",
-            "symbol": symbol,
-            "interval": interval,
-            "outputsize": outputsize,
-            "apikey": key,
-        }
-    )
-    try:
-        data = get_json(url)
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "error": type(exc).__name__, "rows": []}
-    if data.get("Note") or data.get("Information") or data.get("Error Message"):
-        return {
-            "status": "notice",
-            "notice": sanitize_text(data.get("Note") or data.get("Information") or data.get("Error Message"), [key]),
-            "rows": [],
-        }
-    key_name = f"Time Series ({interval})"
-    series = data.get(key_name, {})
-    rows = []
-    cutoff = datetime.now() - timedelta(seconds=window_seconds) if window_seconds else None
-    for timestamp, values in series.items():
-        parsed_timestamp = datetime.fromisoformat(timestamp)
-        if cutoff and parsed_timestamp < cutoff:
-            continue
-        rows.append(
-            {
-                "date": timestamp,
-                "timestamp": timestamp,
-                "open": float(values["1. open"]),
-                "high": float(values["2. high"]),
-                "low": float(values["3. low"]),
-                "close": float(values["4. close"]),
-                "volume": float(values.get("5. volume", 0)),
-            }
-        )
-    rows.sort(key=lambda row: row["date"])
-    return {
-        "status": "ok" if rows else "no_data",
-        "rows": rows,
-        "source": "alpha_vantage",
-        "interval": interval,
-        "outputsize": outputsize,
-        "timestamp_note": "Alpha Vantage intraday timestamps are returned as exchange-local strings.",
-    }
-
-
-def yahoo_range_for_window(window: str) -> str:
-    normalized = window.strip().lower()
-    if normalized in {"today", "1d"}:
-        return "1d"
-    if normalized in {"2d", "5d", "1w"}:
-        return "5d"
-    if normalized in {"2w", "1m"}:
-        return "1mo"
-    return "3mo"
-
-
-def yahoo_chart_series(symbol: str, interval: str, window: str) -> dict:
-    range_value = yahoo_range_for_window(window)
-    url = "https://query1.finance.yahoo.com/v8/finance/chart/" + urllib.parse.quote(symbol) + "?" + urllib.parse.urlencode(
-        {
-            "range": range_value,
-            "interval": interval,
-            "includePrePost": "false",
-        }
-    )
-    try:
-        data = get_json(url)
-    except Exception as exc:  # noqa: BLE001
-        return {"status": "error", "error": type(exc).__name__, "rows": []}
-    chart = data.get("chart", {})
-    if chart.get("error"):
-        return {"status": "error", "notice": sanitize_text(str(chart["error"])), "rows": []}
-    results = chart.get("result") or []
-    if not results:
-        return {"status": "no_data", "rows": []}
-    result = results[0]
-    timestamps = result.get("timestamp") or []
-    quote_items = (result.get("indicators", {}).get("quote") or [{}])[0]
-    opens = quote_items.get("open") or []
-    highs = quote_items.get("high") or []
-    lows = quote_items.get("low") or []
-    closes = quote_items.get("close") or []
-    volumes = quote_items.get("volume") or []
-    rows = []
-    for timestamp, open_, high, low, close, volume in zip(timestamps, opens, highs, lows, closes, volumes):
-        if None in (open_, high, low, close):
-            continue
-        timestamp_utc = datetime.fromtimestamp(int(timestamp), tz=timezone.utc).isoformat()
-        rows.append(
-            {
-                "date": timestamp_utc,
-                "timestamp_utc": timestamp_utc,
-                "open": float(open_),
-                "high": float(high),
-                "low": float(low),
-                "close": float(close),
-                "volume": float(volume or 0),
-            }
-        )
-    rows.sort(key=lambda row: row["date"])
-    return {
-        "status": "ok" if rows else "no_data",
-        "rows": rows,
-        "source": "yahoo_chart",
-        "range": range_value,
-        "interval": interval,
-        "timestamp_note": "Yahoo chart timestamps are UTC; this is a fallback data source and may be delayed.",
-    }
+from data_provider import (
+    get_daily_ohlcv,
+    get_intraday_ohlcv,
+    get_output_dir,
+    get_quote,
+    get_weekly_ohlcv,
+    load_keys,
+)
 
 
 def sma(values: list[float], n: int) -> float | None:
@@ -724,29 +456,6 @@ def make_chart(symbol: str, rows: list[dict], output_path: Path, title: str) -> 
     return str(output_path)
 
 
-def intraday_window_seconds(window: str) -> int | None:
-    normalized = window.strip().lower()
-    fixed = {
-        "today": 24 * 60 * 60,
-        "1d": 24 * 60 * 60,
-        "2d": 2 * 24 * 60 * 60,
-        "5d": 5 * 24 * 60 * 60,
-        "1w": 7 * 24 * 60 * 60,
-        "2w": 14 * 24 * 60 * 60,
-        "1m": 30 * 24 * 60 * 60,
-        "3m": 90 * 24 * 60 * 60,
-    }
-    if normalized in fixed:
-        return fixed[normalized]
-    match = re.fullmatch(r"(\d+)([dwm])", normalized)
-    if not match:
-        return None
-    amount = int(match.group(1))
-    unit = match.group(2)
-    multiplier = {"d": 24 * 60 * 60, "w": 7 * 24 * 60 * 60, "m": 30 * 24 * 60 * 60}[unit]
-    return amount * multiplier
-
-
 def parse_row_datetime(row: dict) -> datetime | None:
     value = row.get("timestamp_utc") or row.get("timestamp") or row.get("date")
     if value is None:
@@ -783,14 +492,6 @@ def intraday_coverage(rows: list[dict]) -> dict:
     }
 
 
-def compact_attempt(source: str, result: dict) -> dict:
-    return {
-        "source": source,
-        "status": result.get("status"),
-        "notice": result.get("notice") or result.get("error"),
-    }
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("ticker")
@@ -816,68 +517,24 @@ def main() -> int:
     args = parser.parse_args()
 
     ticker = args.ticker.upper()
-    output_dir = Path(args.output_dir)
+    output_dir = get_output_dir() if args.output_dir == "auto" else Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     keys = load_keys(args.key_file)
 
-    daily = alpha_vantage_series(ticker, "TIME_SERIES_DAILY", keys.get("ALPHA_VANTAGE_API_KEY"))
-    time.sleep(1.2)
-    weekly = alpha_vantage_series(ticker, "TIME_SERIES_WEEKLY", keys.get("ALPHA_VANTAGE_API_KEY"))
-    quote = finnhub_quote(ticker, keys.get("FINNHUB_API_KEY"))
+    daily = get_daily_ohlcv(ticker, keys)
+    weekly = get_weekly_ohlcv(ticker, keys)
+    quote = get_quote(ticker, keys)
     intraday = {"status": "skipped", "rows": []}
     intraday_realtime = False
-    intraday_attempts = []
     if args.intraday_window:
-        window_seconds = intraday_window_seconds(args.intraday_window)
-        if window_seconds is None:
-            intraday = {"status": "invalid_window", "rows": [], "notice": "Unsupported intraday window"}
-        else:
-            to_ts = int(datetime.now(timezone.utc).timestamp())
-            from_ts = int((datetime.now(timezone.utc) - timedelta(seconds=window_seconds)).timestamp())
-            if args.intraday_source in {"auto", "finnhub"}:
-                finnhub = finnhub_candles(ticker, keys.get("FINNHUB_API_KEY"), args.intraday_resolution, from_ts, to_ts)
-                if finnhub["status"] == "ok":
-                    finnhub["source"] = "finnhub"
-                    intraday = finnhub
-                    intraday_realtime = True
-                else:
-                    intraday_attempts.append(compact_attempt("finnhub", finnhub))
-
-            if intraday["status"] != "ok" and args.intraday_source in {"auto", "alpha_vantage"}:
-                if intraday_attempts:
-                    time.sleep(1.2)
-                alpha_vantage = alpha_vantage_intraday_series(
-                    ticker,
-                    f"{args.intraday_resolution}min",
-                    keys.get("ALPHA_VANTAGE_API_KEY"),
-                    window_seconds,
-                )
-                if alpha_vantage["status"] == "ok":
-                    if intraday_attempts:
-                        alpha_vantage["fallback_from"] = intraday_attempts
-                    intraday = alpha_vantage
-                    intraday_realtime = False
-                else:
-                    intraday_attempts.append(compact_attempt("alpha_vantage", alpha_vantage))
-
-            if intraday["status"] != "ok":
-                yahoo = yahoo_chart_series(ticker, f"{args.intraday_resolution}m", args.intraday_window)
-                if yahoo["status"] == "ok":
-                    if intraday_attempts:
-                        yahoo["fallback_from"] = intraday_attempts
-                    intraday = yahoo
-                    intraday_realtime = False
-                else:
-                    intraday_attempts.append(compact_attempt("yahoo_chart", yahoo))
-                    intraday["fallback"] = intraday_attempts
+        intraday = get_intraday_ohlcv(ticker, keys, args.intraday_resolution, args.intraday_window, args.intraday_source)
+        intraday_realtime = bool(intraday.get("is_realtime"))
     benchmark_daily = {"status": "skipped", "rows": []}
     sector_daily = {"status": "skipped", "rows": []}
     if args.benchmark:
-        time.sleep(1.2)
-        benchmark_daily = alpha_vantage_series(args.benchmark.upper(), "TIME_SERIES_DAILY", keys.get("ALPHA_VANTAGE_API_KEY"))
+        benchmark_daily = get_daily_ohlcv(args.benchmark.upper(), keys)
     if args.sector:
-        time.sleep(1.2)
-        sector_daily = alpha_vantage_series(args.sector.upper(), "TIME_SERIES_DAILY", keys.get("ALPHA_VANTAGE_API_KEY"))
+        sector_daily = get_daily_ohlcv(args.sector.upper(), keys)
 
     charts = {}
     if not args.no_charts:
@@ -894,18 +551,25 @@ def main() -> int:
             )
 
     intraday_coverage_data = intraday_coverage(intraday["rows"]) if intraday["status"] == "ok" else intraday_coverage([])
+    intraday_provider = intraday.get("provider")
     intraday_data_quality = (
         "realtime_candles"
         if intraday_realtime
-        else "current_session_bars" if intraday_coverage_data["has_intraday_today"] else "delayed_or_historical_bars"
+        else "prefetched_web_bars"
+        if intraday_provider == "prefetched_web"
+        else "yfinance_bars"
+        if intraday_provider == "yfinance"
+        else "current_session_bars"
+        if intraday_coverage_data["has_intraday_today"]
+        else "delayed_or_historical_bars"
     )
 
     bundle = {
         "ticker": ticker,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "analysis_window": {
-            "daily": "compact Alpha Vantage daily series",
-            "weekly": "compact Alpha Vantage weekly series",
+            "daily": daily.get("source"),
+            "weekly": weekly.get("source"),
             "intraday_window": args.intraday_window,
             "intraday_resolution": args.intraday_resolution if args.intraday_window else None,
             "intraday_source_requested": args.intraday_source if args.intraday_window else None,
@@ -914,6 +578,8 @@ def main() -> int:
         "daily": {
             "status": daily["status"],
             "notice": daily.get("notice"),
+            "source": daily.get("source"),
+            "provider": daily.get("provider"),
             "indicators": build_indicators(
                 daily["rows"],
                 timeframe="daily",
@@ -926,6 +592,8 @@ def main() -> int:
         "weekly": {
             "status": weekly["status"],
             "notice": weekly.get("notice"),
+            "source": weekly.get("source"),
+            "provider": weekly.get("provider"),
             "indicators": build_indicators(
                 weekly["rows"],
                 timeframe="weekly",
@@ -939,6 +607,7 @@ def main() -> int:
             "status": intraday["status"],
             "notice": intraday.get("notice"),
             "source": intraday.get("source"),
+            "provider": intraday.get("provider"),
             "is_realtime": intraday_realtime,
             "data_quality": intraday_data_quality,
             "has_intraday_today": intraday_coverage_data["has_intraday_today"],
@@ -988,15 +657,26 @@ def main() -> int:
         },
         "data_health": {
             "quote_status": quote.get("status"),
+            "quote_source": quote.get("source"),
+            "quote_provider": quote.get("provider"),
             "daily_status": daily["status"],
+            "daily_source": daily.get("source"),
+            "daily_provider": daily.get("provider"),
             "weekly_status": weekly["status"],
+            "weekly_source": weekly.get("source"),
+            "weekly_provider": weekly.get("provider"),
             "intraday_status": intraday["status"],
             "intraday_source": intraday.get("source"),
+            "intraday_provider": intraday.get("provider"),
             "intraday_data_quality": intraday_data_quality,
             "intraday_has_current_day_bars": intraday_coverage_data["has_intraday_today"],
             "intraday_usable_for_report": intraday_coverage_data["usable_for_report"],
             "benchmark_status": benchmark_daily["status"],
+            "benchmark_source": benchmark_daily.get("source"),
+            "benchmark_provider": benchmark_daily.get("provider"),
             "sector_status": sector_daily["status"],
+            "sector_source": sector_daily.get("source"),
+            "sector_provider": sector_daily.get("provider"),
             "chart_status": "ok" if charts else "not_generated",
         },
     }

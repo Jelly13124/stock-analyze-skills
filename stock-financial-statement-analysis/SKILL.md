@@ -1,6 +1,6 @@
 ---
 name: stock-financial-statement-analysis
-description: Use when a stock analysis needs financial statements, 10-K, 10-Q, earnings release, income statement, balance sheet, cash flow, margins, revenue growth, EPS, FCF, debt, liquidity, earnings quality, guidance, or transcript analysis.
+description: Use when stock analysis needs 10-K, 10-Q, earnings, income statement, balance sheet, cash flow, margins, EPS, debt, liquidity, guidance, or transcript review.
 ---
 
 # Stock Financial Statement Analysis

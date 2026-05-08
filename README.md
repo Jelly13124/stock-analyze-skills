@@ -61,6 +61,14 @@ Claude Desktop：
 
 For Claude Desktop, import all `stock-*` folders in the Skills page. At minimum import `stock-analysis`; for full SOP reports, import all sub-skills.
 
+Claude.ai 网页端需要先打包 zip：
+
+```powershell
+.\tools\build_claude_zips.ps1
+```
+
+详细说明见 `docs/CROSS_PLATFORM.md`。
+
 ## 3. API Key 配置 / API Key Setup
 
 在 repo 根目录创建 `key.txt`：

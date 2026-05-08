@@ -1,6 +1,6 @@
 ---
 name: stock-company-fundamentals
-description: Use when a stock analysis needs company fundamentals, business model, moat, competitive advantage, TAM, pricing power, management quality, capital allocation, catalysts, risks, or qualitative thesis work.
+description: Use when stock analysis needs company fundamentals, business model, moat, TAM, pricing power, management, capital allocation, catalysts, or thesis risks.
 ---
 
 # Stock Company Fundamentals

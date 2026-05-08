@@ -10,6 +10,8 @@ api_keys.txt
 # Generated reports / local outputs
 outputs/
 reports/
+claude_web_zips/
+prefetched_data/
 *.log
 
 # Python/cache artifacts

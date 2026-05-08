@@ -1,6 +1,6 @@
 ---
 name: stock-technical-analysis
-description: Use when a stock, ETF, or ticker request needs technical analysis, chart levels, RSI, KDJ, MACD, moving averages, EMA, SMA, Bollinger Bands, ATR, OBV, support, resistance, trend, breakout, stop loss, entry, exit, or short-term trading setup.
+description: Use when stock or ETF analysis needs charts, RSI, KDJ, MACD, moving averages, Bollinger Bands, ATR, OBV, support, resistance, trend, breakout, stops, or entries.
 ---
 
 # Stock Technical Analysis

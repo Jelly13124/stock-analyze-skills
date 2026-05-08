@@ -1,6 +1,6 @@
 ---
 name: stock-sector-analysis
-description: Use when a stock analysis needs sector, industry, GICS, peer comparison, sector ETF strength, sector rotation, industry catalysts, relative strength versus SPY, competitor positioning, or top-down industry screening.
+description: Use when stock analysis needs sector, industry, GICS, peer comparison, sector ETF strength, sector rotation, catalysts, relative strength, or competitors.
 ---
 
 # Stock Sector Analysis

@@ -1,6 +1,6 @@
 ---
 name: stock-risk-position-analysis
-description: Use when a stock or trade request needs risk management, position sizing, stop loss, take profit, risk-reward, portfolio exposure, single-name limit, sector concentration, execution checklist, trade plan, or short-term and medium-term strategy.
+description: Use when stock analysis needs position sizing, stop loss, take profit, risk-reward, event risk, portfolio exposure, trade plan, or short/medium strategy.
 ---
 
 # Stock Risk Position Analysis

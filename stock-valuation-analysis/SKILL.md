@@ -1,6 +1,6 @@
 ---
 name: stock-valuation-analysis
-description: Use when a stock analysis needs valuation, target price, price target, intrinsic value, DCF, relative valuation, forward P/E, PEG, EV/EBITDA, P/S, P/FCF, margin of safety, bear/base/bull scenario, or upside/downside estimate.
+description: Use when stock analysis needs valuation, target price, intrinsic value, DCF, relative multiples, margin of safety, bear/base/bull cases, or upside/downside.
 ---
 
 # Stock Valuation Analysis

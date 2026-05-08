@@ -1,6 +1,6 @@
 ---
 name: stock-macro-analysis
-description: Use when a stock, ETF, or market request needs macro environment analysis, Fed policy, interest rates, yield curve, CPI, jobs data, GDP, PMI, VIX, market breadth, Risk-On/Risk-Off regime, recession risk, liquidity, or macro impact on equity strategy.
+description: Use when stock or ETF analysis needs macro regime, Fed policy, rates, yield curve, CPI, jobs, GDP, VIX, liquidity, recession risk, or market impact.
 ---
 
 # Stock Macro Analysis

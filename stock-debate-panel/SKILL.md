@@ -1,6 +1,6 @@
 ---
 name: stock-debate-panel
-description: Use when a stock analysis needs multi-agent debate, bull case, bear case, quant review, risk-manager review, investment committee, thesis challenge, counterarguments, confidence calibration, or final moderated synthesis before a full report.
+description: Use when stock analysis needs bull/bear debate, quant review, risk-manager review, thesis challenge, confidence calibration, or investment committee synthesis.
 ---
 
 # Stock Debate Panel
