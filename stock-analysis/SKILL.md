@@ -97,6 +97,7 @@ For DOCX output:
    - `stock-financial-statement-analysis`
    - `stock-valuation-analysis`
    - `stock-technical-analysis`
+   - `stock-sentiment-analysis` for `standard` and `full SOP` when insider/news/analyst-revision/short-interest data is available; skip for `basic` unless the user requests sentiment.
    - `stock-risk-position-analysis`
    - `stock-debate-panel` only for `full` or when explicitly requested.
    - For `full SOP`, the `stock-company-fundamentals` section must follow its bilingual institutional report reference and include investment question, business/segment map, unit economics, industry structure, competitive position, catalysts, management/capital allocation, financial translation, thesis breakers, and evidence gaps.

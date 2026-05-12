@@ -100,6 +100,87 @@ Do not treat a single KDJ golden cross, RSI oversold reading, or MACD cross as a
 
 KDJ basis rule: daily/weekly `kdj_9_3_3` from the script is completed OHLCV-bar KDJ, not realtime. Intraday `kdj_9_3_3` is candle-based from the selected intraday source. Report the data source, `data_quality`, resolution, window, latest bar timestamp, `has_intraday_today`, and `usable_for_report`. Do not over-emphasize `is_realtime=false`; when `usable_for_report=true`, state that the intraday chart is usable current-session or delayed-bar analysis, not exchange-direct realtime.
 
+## Quantitative Strategy Layer
+
+Use this as an optional numeric overlay running **alongside** Decision Priority, not replacing it. Score four independent strategies, then blend into a single score. The qualitative trend/RS/volume/structure read in Decision Priority always wins ties.
+
+### Four Strategies And Weights
+
+| Strategy | Weight | Indicators |
+|---|---:|---|
+| Trend Following | 30% | EMA(8/21/55) alignment + ADX(14) trend strength |
+| Momentum | 30% | 1M / 3M / 6M return + volume momentum |
+| Mean Reversion | 20% | Z-score(20) + Bollinger position + RSI(14/28) |
+| Volatility Regime | 20% | Annualized vol + vol percentile + ATR ratio |
+
+Compute each strategy's signal as `+1` bullish, `0` neutral, `-1` bearish, with per-strategy confidence 0-100%.
+
+### Trend Following (weight 30%)
+
+| Signal | Bullish | Bearish |
+|---|---|---|
+| EMA stack | EMA_8 > EMA_21 > EMA_55 | EMA_8 < EMA_21 < EMA_55 |
+| ADX(14) | > 25 with rising +DI | > 25 with rising -DI |
+| Slope | All EMAs rising | All EMAs falling |
+
+3 of 3 met = bullish/bearish; 2 of 3 = mild; otherwise neutral.
+
+### Momentum (weight 30%)
+
+| Signal | Bullish | Bearish |
+|---|---|---|
+| 1-month return | > +5% | < -5% |
+| 3-month return | > +10% | < -10% |
+| 6-month return | > +15% | < -15% |
+| Volume momentum | 20D avg volume > 1.2x 60D avg | < 0.8x 60D avg |
+
+3+ rows bullish = bullish; 3+ rows bearish = bearish.
+
+### Mean Reversion (weight 20%)
+
+Compute 20-day Z-score of price: `z = (close - SMA20) / stdev20`.
+
+| Signal | Bullish (oversold reversion) | Bearish (overbought reversion) |
+|---|---|---|
+| Z-score | < -2.0 | > +2.0 |
+| Bollinger position | < 0.2 (near lower band) | > 0.8 (near upper band) |
+| RSI(14) and RSI(28) | both < 30 | both > 70 |
+
+Mean reversion signals **conflict with trend signals by design**. When trend is strong (ADX > 30) and mean reversion is extreme, prefer the trend read and treat MR as a "do not chase" warning, not a counter-trade trigger.
+
+### Volatility Regime (weight 20%)
+
+Compute annualized volatility: `ann_vol = stdev(daily_returns, 60) × sqrt(252)`.
+Vol regime = `ann_vol / median(rolling_60d_ann_vol over last 252 days)`.
+
+| Signal | Bullish | Bearish |
+|---|---|---|
+| Vol regime | < 0.8 (compressed) with bullish trend | > 1.2 (expanded) with bearish trend |
+| ATR ratio (ATR14 / price) | declining, < 90D median | rising, > 90D median |
+| Z-score interaction | vol compression + price Z < -1 | vol expansion + price Z > +1 |
+
+Low volatility favors trend continuation; expanding volatility into resistance is a breakdown warning.
+
+### Aggregated Strategy Score
+
+```
+strategy_score = Σ (signal × weight × confidence/100)
+```
+
+| Score | Label |
+|---:|---|
+| > +0.25 | Quantitative bullish |
+| +0.10 to +0.25 | Mild bullish |
+| -0.10 to +0.10 | Neutral / mixed |
+| -0.25 to -0.10 | Mild bearish |
+| < -0.25 | Quantitative bearish |
+
+### Reconciliation With Decision Priority
+
+When Quantitative Strategy Score and Decision Priority verdict **agree**, raise overall confidence.
+
+When they **disagree**, Decision Priority wins for the strategy call, but surface the disagreement explicitly in the report (e.g., "trend structure bullish but momentum and volatility regime warn extended; reduce size or widen stop"). Never let the quantitative score override the qualitative trend/structure read on its own.
+
 ## Output Contract
 
 Return a Markdown report or report section with:

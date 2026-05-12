@@ -70,6 +70,54 @@ Every standalone report or main-report section must include a conclusion, source
 | Debt load | manageable coverage | coverage <3x or refinancing pressure |
 | Guidance | raise or resilient | lower guidance with demand weakness |
 
+## Quantitative Quick Filters
+
+Use this as a fast numeric overlay on the qualitative analysis above. Score each metric as bullish, neutral, or bearish using the explicit thresholds. These thresholds are calibrated for US large/mid-cap mature companies; adjust the bar lower for small-cap, early growth, or cyclical names and state the adjustment in the report.
+
+### Profitability (bullish if 2 of 3 met)
+
+| Metric | Bullish | Bearish |
+|---|---|---|
+| Return on equity (ROE, TTM) | > 15% | < 8% |
+| Net margin (TTM) | > 20% | < 5% |
+| Operating margin (TTM) | > 15% | < 5% |
+
+### Growth (bullish if 2 of 3 met)
+
+| Metric | Bullish | Bearish |
+|---|---|---|
+| Revenue growth (YoY) | > 10% | < 0% |
+| EPS growth (YoY) | > 10% | < 0% |
+| Book value per share growth (YoY) | > 10% | < 0% |
+
+### Financial Health (bullish if 2 of 3 met)
+
+| Metric | Bullish | Bearish |
+|---|---|---|
+| Current ratio | > 1.5 | < 1.0 |
+| Debt-to-equity | < 0.5 | > 1.5 |
+| Interest coverage (EBIT / interest) | > 5x | < 3x |
+
+### Earnings Quality (bullish if 2 of 3 met)
+
+| Metric | Bullish | Bearish |
+|---|---|---|
+| FCF per share vs EPS (cash quality) | FCF/share > EPS × 0.8 | FCF/share < EPS × 0.5 |
+| FCF conversion (FCF / net income) | > 80% | < 50% |
+| ROIC vs WACC spread | ROIC > WACC + 4 ppt | ROIC < WACC |
+
+### Aggregation
+
+Score each of the four categories as `bullish`, `neutral`, or `bearish` using the 2-of-3 majority rule. The overall quantitative verdict is:
+
+- `bullish` when bullish categories > bearish categories
+- `bearish` when bearish > bullish
+- `neutral` otherwise
+
+Confidence = max(bullish_categories, bearish_categories) / 4 × 100%.
+
+This quantitative verdict is a **filter**, not a recommendation. Always reconcile with the qualitative trend analysis above. If they disagree, state the conflict in `Implication For Valuation, Strategy, And Risk` and lower confidence.
+
 ## Output Contract
 
 Return a Markdown report or report section with:
