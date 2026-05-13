@@ -56,7 +56,7 @@ See `references/depth-framework.md` for the depth matrix. For `full` reports, al
 |---|---|---|
 | `basic` | Quick view, first-pass ticker opinion, simple risk check | Data Health, price/trend snapshot, key support/resistance, valuation snapshot, main risks, short conditional view. No full DCF and no formal debate. |
 | `standard` | Normal stock analysis, target price, report, or strategy request | Macro, sector/peer, fundamentals, financial statement review, valuation, technicals, risk plan, bear/base/bull range, and one counter-thesis section. No formal multi-agent debate unless requested. |
-| `full SOP` | Complete SOP, institutional-style report, professional report, multi-agent debate, or highest-depth request | Full seven-step SOP, primary-source evidence, Evidence Ledger, relative valuation and DCF/scenario math, daily/weekly/requested intraday charts, sensitivity, catalysts, invalidation levels, scoring, event risk, and bull/bear/quant/risk/moderator debate. |
+| `full SOP` | Complete SOP, institutional-style report, professional report, multi-agent debate, or highest-depth request | Full seven-step SOP, primary-source evidence, Evidence Ledger, relative valuation and DCF/scenario math, daily/weekly/requested intraday charts, sensitivity, catalysts, invalidation levels, scoring, event risk, and real multi-subagent debate (1-3 rounds, persona-driven where requested) when the runtime supports the Agent tool; single-LLM-labeled fallback otherwise. |
 
 ## Report Format Gate
 
@@ -99,7 +99,8 @@ For DOCX output:
    - `stock-technical-analysis`
    - `stock-sentiment-analysis` for `standard` and `full SOP` when insider/news/analyst-revision/short-interest data is available; skip for `basic` unless the user requests sentiment.
    - `stock-risk-position-analysis`
-   - `stock-debate-panel` only for `full` or when explicitly requested.
+   - `stock-debate-panel` only for `full` or when explicitly requested. When invoked under `full SOP` AND the `Agent` tool is available, follow the `Subagent Dispatch Protocol` defined in `stock-debate-panel/SKILL.md` — dispatch one parallel `general-purpose` subagent per role per round rather than calling the panel as a single sub-skill. The panel will ask the user for round count (1/2/3) and persona roster via its Request Gate.
+   - Investor persona skills (`stock-investor-buffett`, `stock-investor-munger`, `stock-investor-graham`, `stock-investor-lynch`, `stock-investor-fisher`, `stock-investor-wood`, `stock-investor-druckenmiller`, `stock-investor-burry`) are not invoked automatically by depth tier. Invoke a specific persona when (a) the user names the persona, (b) the user asks for a "second opinion through X's lens", or (c) the user requests a debate in which a persona substitutes for the generic Bull or Bear slot — in which case the panel orchestrator passes the persona content to the relevant subagent as instructed in `stock-debate-panel/SKILL.md`.
    - For `full SOP`, the `stock-company-fundamentals` section must follow its bilingual institutional report reference and include investment question, business/segment map, unit economics, industry structure, competitive position, catalysts, management/capital allocation, financial translation, thesis breakers, and evidence gaps.
 6. Build an evidence ledger: bullish facts, bearish facts, uncertain/missing data, catalysts, invalidation points.
 7. Produce the requested Markdown or DOCX report using `references/report-template.md`.
@@ -176,6 +177,16 @@ When invoked by `stock-analysis`, each sub-skill must return a Markdown section 
 - missing data, low-confidence assumptions, and what would change the conclusion
 
 When a user calls a sub-skill directly, produce a self-contained Markdown sub-report in the user's language. If ticker, objective, depth, or technical window is unclear and materially affects the answer, ask one concise clarification before analysis. End standalone sub-reports with `Not investment advice -- for your own research.`.
+
+### Investor Persona Sub-Skills
+
+The eight `stock-investor-<persona>` skills (Buffett, Munger, Graham, Lynch, Fisher, Wood, Druckenmiller, Burry) are sub-skills with a different invocation pattern from the analytical sub-skills above. They are NOT invoked automatically by report depth. Use them in three ways:
+
+1. **Solo persona conversation** — when the user names a persona ("analyze NVDA through Buffett's lens"), invoke only that persona skill. The entire conversation runs in that persona's voice. Output the persona's standalone Markdown report.
+2. **Persona second opinion alongside the SOP** — after a `standard` or `full SOP` report, the user may ask for a single persona's read on the same name. Run the persona's standalone report against the same evidence ledger; surface its scoring breakdown and conviction band as an appendix.
+3. **Persona as debate participant** — when the user requests a debate with persona substitution (e.g., "Buffett vs Wood"), the panel orchestrator dispatches each persona as a parallel subagent per `stock-debate-panel`'s Subagent Dispatch Protocol; each persona returns only its compact debate output (thesis paragraph + scoring table + conviction band), not the full Standalone Markdown Report Mode.
+
+Each persona has explicit Conflict And Pass Rules; respect them — a Buffett persona refusing to opine on a pre-profit biotech is correct behavior, not a failure to analyze.
 
 ## Output Rules
 
