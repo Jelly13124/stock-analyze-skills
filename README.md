@@ -1,83 +1,111 @@
-# Stock Analyze Skills / 股票分析 Skill 包
+<div align="right">
 
-这是一个可在 Codex、Claude Code、Claude Desktop 中使用的股票分析 skill 包。主 skill 是 `stock-analysis`，它会按用户需求调用多个子 skill，生成基础、标准或完整 SOP 股票分析报告。
+**English** · [中文](README.zh-CN.md)
 
-This repo contains a stock analysis skill suite for Codex, Claude Code, and Claude Desktop. The main skill is `stock-analysis`; it coordinates sub-skills to generate basic, standard, or full SOP equity reports.
+</div>
 
-## 1. Skill 结构 / Skill Structure
+# Stock Analyze Skills
 
-```text
-stock-analyze-skills/
-  stock-analysis/                       # main skill
-  stock-company-fundamentals/           # company and business quality
-  stock-financial-statement-analysis/   # 10-K, 10-Q, earnings, cash flow
-  stock-valuation-analysis/             # valuation and target price
-  stock-technical-analysis/             # charts, RSI, KDJ, MACD, support/resistance
-  stock-macro-analysis/                 # rates, Fed, CPI, jobs, risk regime
-  stock-sector-analysis/                # sector, peers, ETF relative strength
-  stock-risk-position-analysis/         # position sizing, stop loss, trade plan
-  stock-debate-panel/                   # full SOP debate stage
-```
+![Skills](https://img.shields.io/badge/skills-18-blue)
+![Personas](https://img.shields.io/badge/investor%20personas-8-success)
+![Multi-Subagent Debate](https://img.shields.io/badge/debate-real%20multi--subagent-orange)
+![Platforms](https://img.shields.io/badge/platforms-Claude%20Code%20·%20Desktop%20·%20Codex%20·%20Web-purple)
+![Last Commit](https://img.shields.io/github/last-commit/Jelly13124/stock-analyze-skills)
 
-| Skill | 中文用途 | English Use |
+A composable, institutional-grade equity research toolkit built as a suite of Claude Code Skills. Translates a multi-step analyst SOP into Markdown prompt files — with explicit numeric thresholds, real multi-subagent debate, and a panel of named investor personas you can converse with directly.
+
+Works in Claude Code, Claude Desktop, Codex, and (with one extra zip step) Claude.ai web.
+
+## What's New (2026-05)
+
+- **8 investor persona skills** — Buffett · Munger · Graham · Lynch · Fisher · Wood · Druckenmiller · Burry. Invoke any one to converse in that investor's voice, or substitute them into the debate panel.
+- **Real multi-subagent debate** — `stock-debate-panel` now dispatches one parallel `Agent` tool call per role per round in Claude Code. Asks the user for round count (1 / 2 / 3) and persona roster at call time. Falls back to single-LLM simulation only when the Agent tool isn't available, and labels the transcript as such.
+- **`stock-sentiment-analysis`** added — 4-channel sentiment skill covering insider transactions (20%), news flow (25%), analyst EPS revisions (35%), and short interest / options positioning (20%).
+- **Quantitative layer** added to financials, technical, valuation, and risk skills — explicit numeric thresholds (ROE > 15%, P/B < 1.5, FCF yield ≥ 15%, ADX, Z-score, Owner Earnings, vol-adjusted position cap, etc.) sit on top of the existing qualitative framework rather than replacing it.
+
+## Skill Map
+
+### Analytical Skills (10)
+
+| Skill | Purpose |
+|---|---|
+| `stock-analysis` | Main orchestrator. Routes between depths (basic / standard / full SOP), invokes sub-skills, produces final Markdown or DOCX report. |
+| `stock-macro-analysis` | Macro regime: Fed, rates, yield curve, CPI, jobs, VIX, liquidity. |
+| `stock-sector-analysis` | Sector / industry / GICS, peer comparison, sector ETF strength. |
+| `stock-company-fundamentals` | Business model, moat, TAM, pricing power, management, capital allocation. |
+| `stock-financial-statement-analysis` | 10-K / 10-Q, income / balance / cash flow, earnings quality + new Quantitative Quick Filters. |
+| `stock-valuation-analysis` | Relative + intrinsic valuation, DCF, Owner Earnings, Residual Income, WACC reference, scenario expected value. |
+| `stock-technical-analysis` | Multi-timeframe trend, RSI / KDJ / MACD / BB / ATR / OBV + new 4-strategy Quantitative Layer (trend / momentum / mean-reversion / vol regime). |
+| `stock-sentiment-analysis` | Insider trades, news flow, analyst EPS revisions, short interest, options positioning. |
+| `stock-risk-position-analysis` | Position sizing, stop logic, R:R, sector cap, vol-adjusted single-stock cap. |
+| `stock-debate-panel` | Real multi-subagent investment-committee debate (1 / 2 / 3 rounds). |
+
+### Investor Persona Skills (8)
+
+| Skill | Lens |
+|---|---|
+| `stock-investor-buffett` | Moat + owner earnings + margin of safety + circle of competence. |
+| `stock-investor-munger` | ROIC + capital allocation + business predictability + quality > price. |
+| `stock-investor-graham` | Net-Net + Graham number + dividend record + defensive tests. |
+| `stock-investor-lynch` | GARP + PEG ≤ 1 + 6-category classification + invest-in-what-you-know. |
+| `stock-investor-fisher` | 15-point checklist + scuttlebutt + R&D intensity + management depth. |
+| `stock-investor-wood` | Disruptive innovation + R&D > 15% + 5-year exponential model + 25x terminal. |
+| `stock-investor-druckenmiller` | Macro-first + concentrated + asymmetric R:R + momentum overlay. |
+| `stock-investor-burry` | Deep value + FCF yield ≥ 15% + EV/EBIT < 6 + contrarian setup. |
+
+Each persona has explicit Conflict And Pass Rules — a Buffett persona refusing to opine on a pre-profit biotech is correct behavior, not a failure to analyze. Persona scoring weights and thresholds are calibrated from `virattt/ai-hedge-fund/src/agents/<persona>.py` and translated into SKILL.md prompt form.
+
+## How This Differs From ai-hedge-fund
+
+| Aspect | This repo (Skill suite) | virattt/ai-hedge-fund |
 |---|---|---|
-| `stock-analysis` | 主调度，负责完整报告 | Main orchestrator |
-| `stock-company-fundamentals` | 公司基本面、商业模式、护城河 | Company fundamentals |
-| `stock-financial-statement-analysis` | 财报、10-K、10-Q、现金流 | Financial statements |
-| `stock-valuation-analysis` | 估值、目标价、情景分析 | Valuation and target price |
-| `stock-technical-analysis` | 日线、周线、盘中、KDJ、RSI | Technical analysis |
-| `stock-macro-analysis` | 宏观、利率、通胀、美联储 | Macro analysis |
-| `stock-sector-analysis` | 行业、同业、行业 ETF | Sector and peers |
-| `stock-risk-position-analysis` | 仓位、止损、风险回报 | Risk and position plan |
-| `stock-debate-panel` | 多智能体辩论 | Multi-agent debate |
+| Form | Markdown SKILL.md prompts | Python + LangGraph framework |
+| Customization | Edit a prompt file | Edit code + framework |
+| Data-failure handling | Built-in Data Health gates and degradation rules | Crashes on missing fields |
+| Qualitative + quantitative | Both layered (qualitative is authoritative; quantitative is a filter) | Quantitative-only |
+| Persona-based debate | Yes — Claude Code Agent tool dispatches each persona as an independent subagent | Yes — LangGraph nodes |
+| Backtesting | Not yet (planned) | Yes |
+| Setup cost | `git clone` + copy folders | `pip install` + LLM API key + data API key |
+| Final output | Professional Markdown / DOCX report | JSON signals + reasoning |
 
-## 2. 快速安装 / Quick Install
+The two projects solve different problems. ai-hedge-fund is a programmable hedge-fund simulator. This repo is an analyst's prompt library that produces report-grade output and stays useful when data is incomplete.
 
-先 clone：
+## Quick Install
 
 ```powershell
 git clone https://github.com/Jelly13124/stock-analyze-skills.git
 cd stock-analyze-skills
 ```
 
-安装到 Codex：
-
-```powershell
-Copy-Item .\stock-* "$env:USERPROFILE\.codex\skills\" -Recurse -Force
-```
-
-安装到 Claude Code：
+### Claude Code
 
 ```powershell
 Copy-Item .\stock-* "$env:USERPROFILE\.claude\skills\" -Recurse -Force
 ```
 
-Claude Desktop：
+### Codex
 
-```text
-把所有 stock-* 文件夹导入 Claude Desktop 的 Skills 页面。
-至少要导入 stock-analysis；如果要完整 SOP，就导入全部 stock-* folders。
+```powershell
+Copy-Item .\stock-* "$env:USERPROFILE\.codex\skills\" -Recurse -Force
 ```
 
-For Claude Desktop, import all `stock-*` folders in the Skills page. At minimum import `stock-analysis`; for full SOP reports, import all sub-skills.
+### Claude Desktop
 
-Claude.ai 网页端需要先打包 zip：
+Import every `stock-*` folder in the Skills page. At minimum import `stock-analysis`; for full SOP reports import all sub-skills; for persona conversations or persona-driven debate, import the `stock-investor-*` folders too.
+
+### Claude.ai Web
+
+Build per-skill zips first:
 
 ```powershell
 .\tools\build_claude_zips.ps1
 ```
 
-详细说明见 `docs/CROSS_PLATFORM.md`。
+Then upload the zips via the Skills UI. Detailed cross-platform notes in `docs/CROSS_PLATFORM.md`.
 
-## 3. API Key 配置 / API Key Setup
+## API Key Setup
 
-在 repo 根目录创建 `key.txt`：
-
-```powershell
-notepad .\key.txt
-```
-
-填入下面格式：
+Create `key.txt` in the repo root:
 
 ```text
 FINNHUB_API_KEY=your_finnhub_key
@@ -85,25 +113,24 @@ ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key
 FRED_API_KEY=your_fred_key
 ```
 
-用途：
+| Key | Purpose | Required? |
+|---|---|---|
+| `FINNHUB_API_KEY` | Quotes and some intraday data | Recommended |
+| `ALPHA_VANTAGE_API_KEY` | Daily / weekly historical OHLCV | Recommended |
+| `FRED_API_KEY` | Macro data (rates, VIX, credit spreads) | Optional |
 
-| Key | 用途 |
-|---|---|
-| `FINNHUB_API_KEY` | 抓取 quote 和部分实时/盘中数据 |
-| `ALPHA_VANTAGE_API_KEY` | 抓取日线、周线历史 OHLCV |
-| `FRED_API_KEY` | 抓取宏观数据，如利率、VIX、信用利差 |
+Yahoo intraday charts work without any key — the data script uses Yahoo as the default intraday source.
 
-Yahoo intraday chart data does not require an API key. The script uses it as the default intraday source.
-
-Yahoo 盘中 K 线默认不需要 API key，脚本会优先用它生成盘中图表。
-
-测试数据脚本：
+Smoke test:
 
 ```powershell
-python .\stock-analysis\scripts\fetch_price_charts.py NFLX --key-file .\key.txt --output-dir .\outputs\NFLX_test --benchmark SPY --sector XLC --intraday-window 1d --intraday-resolution 5
+python .\stock-analysis\scripts\fetch_price_charts.py NFLX `
+  --key-file .\key.txt --output-dir .\outputs\NFLX_test `
+  --benchmark SPY --sector XLC `
+  --intraday-window 1d --intraday-resolution 5
 ```
 
-如果成功，会生成：
+Success produces:
 
 ```text
 outputs/NFLX_test/NFLX_technical_bundle.json
@@ -111,45 +138,85 @@ outputs/NFLX_test/NFLX_daily_chart.png
 outputs/NFLX_test/NFLX_intraday_1d_5m_chart.png
 ```
 
-## 4. 使用方式 / Usage
+## Usage
 
-Codex：
-
-```text
-[$stock-analysis](C:\Users\Jerry\.codex\skills\stock-analysis\SKILL.md) NFLX full SOP md 盘中 目标价 / 短线交易 / 中期策略 / 长期投资 / 财报分析
-```
-
-Claude Code：
+### Mode 1 — Full SOP report
 
 ```text
-/stock-analysis NFLX full SOP md 盘中 目标价 / 短线交易 / 中期策略 / 长期投资 / 财报分析
+/stock-analysis NFLX full SOP md intraday target-price / short-term / medium-term / long-term / earnings-review
 ```
 
-Claude Desktop：
+The orchestrator collects evidence, invokes every sub-skill in order, and assembles a single Markdown / DOCX report.
+
+### Mode 2 — Single sub-skill
 
 ```text
-Use stock-analysis to analyze NFLX.
-Full SOP, Markdown, Chinese report.
-Include target price, short-term trading, medium-term strategy, long-term investing, and financial statement analysis.
-Use intraday, 1-week, daily, and weekly technical windows.
+/stock-valuation-analysis NFLX full target-price
+/stock-technical-analysis NFLX intraday 5m KDJ RSI
+/stock-sentiment-analysis NFLX 30-day window
+/stock-company-fundamentals NFLX full fundamentals report
 ```
 
-子 skill 也可以单独调用：
+### Mode 3 — Persona conversation (new)
 
 ```text
-stock-valuation-analysis NFLX full target price
-stock-technical-analysis NFLX intraday 5m KDJ RSI
-stock-company-fundamentals NFLX full fundamentals report
+/stock-investor-buffett
+> What do you think of NVDA at current price?
 ```
 
-## 5. 报告深度 / Report Depth
+The entire conversation runs in that investor's voice. Buffett will refuse to opine on names outside his circle of competence; Wood will reject mature dividend-payers as uninteresting. That's by design.
 
-| Depth | 中文说明 | English |
+### Mode 4 — Real multi-subagent debate (new)
+
+```text
+/stock-debate-panel
+```
+
+The panel asks two things via its Request Gate:
+
+1. **Rounds** — 1 (independent thesis only), 2 (adds rebuttals), or 3 (adds confidence revision)
+2. **Personas** — default = generic Bull / Bear / Quant / Risk / Moderator; or specify investor swaps, e.g. "Buffett vs Wood + standard Quant / Risk / Moderator"
+
+In Claude Code, each role is dispatched as an independent parallel `Agent` subagent — not the same LLM modelling multiple voices.
+
+## Report Depth
+
+| Depth | When | Output |
 |---|---|---|
-| `basic` | 快速分析，不做完整辩论 | Quick view |
-| `standard` | 常规研究报告 | Normal research report |
-| `full SOP` | 完整 SOP、图表、估值、策略、多智能体辩论 | Full report with charts, valuation, strategy, and debate |
+| `basic` | Quick view, first-pass opinion | Data Health, price snapshot, valuation snapshot, key risks |
+| `standard` | Normal research request | Macro / sector / fundamentals / financials / valuation / technicals / sentiment / risk plan + bear / base / bull range |
+| `full SOP` | Institutional-style report or explicit "full" request | Full 7-step SOP + Evidence Ledger + DCF / scenario math + charts + scoring + event risk + real multi-subagent debate (1-3 rounds) |
 
-如果用户只输入一个 ticker，例如 `NFLX`，主 skill 应先追问报告深度、格式、目标和技术窗口。
+If the user enters a bare ticker, the main skill asks for depth, output format, objective, and technical window before generating anything.
 
-If the user only enters a bare ticker such as `NFLX`, the main skill should ask for depth, output format, objective, and technical window before generating a report.
+## Repository Layout
+
+```text
+stock-analyze-skills/
+├── stock-analysis/                       # main orchestrator
+├── stock-macro-analysis/
+├── stock-sector-analysis/
+├── stock-company-fundamentals/
+├── stock-financial-statement-analysis/
+├── stock-valuation-analysis/
+├── stock-technical-analysis/
+├── stock-sentiment-analysis/             # new (2026-05)
+├── stock-risk-position-analysis/
+├── stock-debate-panel/                   # upgraded to real multi-subagent
+├── stock-investor-buffett/               # new persona skills (2026-05)
+│   └── references/persona-skill-template.md   # shared structural template
+├── stock-investor-munger/
+├── stock-investor-graham/
+├── stock-investor-lynch/
+├── stock-investor-fisher/
+├── stock-investor-wood/
+├── stock-investor-druckenmiller/
+├── stock-investor-burry/
+├── docs/                                 # cross-platform notes
+├── tools/                                # zip builder for Claude.ai web
+└── README.md / README.zh-CN.md
+```
+
+## Disclaimer
+
+These skills produce research output, not investment advice. Every report this suite generates ends with `Not investment advice -- for your own research.` — that line is non-negotiable.
