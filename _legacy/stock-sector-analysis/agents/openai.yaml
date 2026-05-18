@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stock Sector Analysis"
+  short_description: "Compare sector strength, peers, and industry catalysts"
+  default_prompt: "Analyze sector strength, peer context, and industry catalysts for a stock."

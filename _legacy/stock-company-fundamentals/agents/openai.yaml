@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stock Company Fundamentals"
+  short_description: "Assess business quality, moat, management, and catalysts"
+  default_prompt: "Analyze a company's business quality, moat, management, and catalysts."

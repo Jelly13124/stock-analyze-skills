@@ -1,0 +1,51 @@
+# Persona criteria as executable thresholds. Keep in sync with
+# persona-criteria-v1.md. backtest.py reads these for reference; the
+# canonical logic lives in the persona_<name>() functions.
+
+version: 1
+embargo_days: 60
+
+supported:
+  lynch:
+    label: "Peter Lynch — GARP"
+    cite_skill: "stock-investor-lynch"
+    rules:
+      ttm_eps_growth_yoy: ">= 0.15"
+      peg: "<= 1.0"
+      debt_to_equity: "< 0.5"
+    rebalance_default: "quarterly"
+
+  graham:
+    label: "Benjamin Graham — defensive"
+    cite_skill: "stock-investor-graham"
+    rules:
+      pe: "< 15"
+      pb: "< 1.5"
+      dividend_yield: "> 0.02"
+      current_ratio: "> 2"
+    rebalance_default: "quarterly"
+
+  burry:
+    label: "Michael Burry — deep value"
+    cite_skill: "stock-investor-burry"
+    rules:
+      fcf_yield: ">= 0.15"
+      pb: "< 1.5"
+      debt_to_equity: "< 0.5"
+    rebalance_default: "quarterly"
+
+  druckenmiller_lite:
+    label: "Stanley Druckenmiller — momentum + macro proxy (lite)"
+    cite_skill: "stock-investor-druckenmiller"
+    rules:
+      price_above_sma200: true
+      sma50_above_sma200: true
+      spy_above_sma200: true
+    rebalance_default: "quarterly"
+    note: "*_lite version — true Druckenmiller looks at macro regime. SPY trend is a coarse proxy."
+
+deferred_v2:
+  buffett:    "Needs owner earnings (EPS + D&A - maintenance capex) and 10-yr ROE history."
+  munger:     "Needs ROIC time series and business predictability rating."
+  fisher:     "Needs R&D intensity rank and scuttlebutt-style qualitative checks."
+  wood:       "Needs disruptive-innovation classification and forward TAM model."
