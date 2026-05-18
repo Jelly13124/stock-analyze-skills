@@ -1,4 +1,0 @@
-interface:
-  display_name: "Stock Risk Positioning"
-  short_description: "Plan stops, sizing, risk-reward, and execution rules"
-  default_prompt: "Create risk management, stop, sizing, and execution guidance for a stock trade."

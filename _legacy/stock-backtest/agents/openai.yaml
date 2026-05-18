@@ -1,4 +1,0 @@
-interface:
-  display_name: "Stock Backtest"
-  short_description: "Backtest a single-ticker strategy, persona, or signal on daily bars"
-  default_prompt: "Backtest a stock. Confirm ticker, mode (indicator / signal / persona), strategy or persona or signal name, window, transaction-cost assumption, and benchmark before running. For persona mode, supported v1 personas are Lynch / Graham / Burry / Druckenmiller-lite; Buffett / Munger / Fisher / Wood are deferred to v2."

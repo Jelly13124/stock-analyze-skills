@@ -1,4 +1,0 @@
-interface:
-  display_name: "Stock Technical Analysis"
-  short_description: "Analyze trend, indicators, support, resistance, and timing"
-  default_prompt: "Analyze technical indicators, trend, support, resistance, and trade timing for a stock."

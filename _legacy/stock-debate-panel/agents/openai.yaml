@@ -1,4 +1,0 @@
-interface:
-  display_name: "Stock Debate Panel"
-  short_description: "Run bull, bear, quant, and risk-manager debate"
-  default_prompt: "Run a multi-role debate over stock analysis evidence and produce a reconciled conclusion."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Stock Macro Analysis"
-  short_description: "Assess market regime and macro risks for stock analysis"
-  default_prompt: "Assess the macro regime for a stock analysis and summarize risk-on or risk-off implications."
