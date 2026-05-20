@@ -1,6 +1,6 @@
 ---
 name: stock-analysis
-description: Use when analyzing stocks, ETFs, tickers, target prices, trade strategy, valuation, DCF, technicals, KDJ/RSI/MACD/Bollinger Bands, support/resistance, breakout, earnings, 10-K/10-Q, fundamentals, sector/peer comparison, macro regime, sentiment, position sizing, stop loss, bull/bear debate, investment committee review, historical backtest (indicator strategy / signal validation / persona allocation), investor personas (Buffett/Munger/Graham/Lynch/Fisher/Wood/Druckenmiller/Burry), or Markdown/DOCX stock reports.
+description: Use when analyzing stocks, ETFs, tickers, target prices, trade strategy, valuation, DCF, technicals, KDJ/RSI/MACD/Bollinger Bands, support/resistance, breakout, earnings, 10-K/10-Q, fundamentals, sector/peer comparison, macro regime, sentiment, position sizing, stop loss, bull/bear debate, investment committee review, historical backtest (indicator strategy / signal validation / persona allocation), investor personas (Buffett/Munger/Graham/Lynch/Fisher/Wood/Druckenmiller/Burry), or Markdown/HTML/DOCX stock reports.
 ---
 
 # Stock Analysis Suite
@@ -9,7 +9,7 @@ description: Use when analyzing stocks, ETFs, tickers, target prices, trade stra
 
 Single-skill SOP-driven US stock analysis suite. This skill is the orchestrator. It contains 18 internal modules under `modules/` (9 analytical + 8 investor personas + 1 backtest). Modules are loaded on demand via the `Read` tool; do not preload modules that the current request does not need.
 
-Use this as the main entry point for SOP-driven US stock analysis. It clarifies ambiguous requests, selects report depth and output format, gathers current evidence, reads the relevant modules, and produces one professional Markdown or DOCX report. Modules can also be invoked directly when the user asks for a single sub-report ("just run the technical module on NVDA").
+Use this as the main entry point for SOP-driven US stock analysis. It clarifies ambiguous requests, selects report depth and output format, gathers current evidence, reads the relevant modules, and produces one professional Markdown, HTML, or DOCX report. Modules can also be invoked directly when the user asks for a single sub-report ("just run the technical module on NVDA").
 
 Always treat financial facts as time-sensitive. Fetch current market data, filings, earnings dates, guidance, news, analyst estimates, macro data, and technical prices when tools or browsing are available. If live data cannot be fetched, state the data limitation clearly and avoid pretending the report is current.
 
@@ -36,23 +36,95 @@ Always disclose provider fields in the final report. Mark `prefetched_web` as a 
 
 ## Request Gate
 
-Before producing any report, determine ticker, report depth, output format, user objective, and technical-analysis window.
+**Always confirm report parameters before producing an analytical report.** A bare ticker is not enough to start — ask the combined question below. The only request type that skips this gate is an explicit backtest request, which routes to its own gate.
 
-If the user already specifies these items, proceed. If any item is unclear, ask one concise clarification before analysis. Do not default to `standard`.
+**Technical window is never asked** — Claude derives it from the stated objective via the Technical Window Defaults table below. Asking would be redundant.
 
-Use this combined question when the request is vague, such as a bare ticker:
+### The combined question (ask whenever the request is not fully specified)
 
-`Please confirm report depth (basic / standard / full SOP), output format (Markdown / DOCX), objective (target price / short-term trade / medium-term strategy / long-term investment / earnings review), and technical window (today intraday / 1-week K-line / daily swing / weekly medium-term).`
+A bare ticker (`NVDA`, `分析一下 DPZ`, `NVDA 怎么样`) specifies none of the parameters. Ask this one combined question before any analysis:
 
-A bare ticker such as `NVDA` is considered vague. Ask the combined question rather than defaulting to `basic`, `standard`, or `full SOP`.
+`Before I analyze <TICKER> (<one-line company identification, e.g. "Domino's Pizza">), please confirm:
+(1) Depth — basic (quick snapshot) / standard (full analyst report) / full SOP (institutional-grade: debate, scoring, scenarios, backtest validation);
+(2) Output format — Markdown (in-chat) / HTML (polished file with charts, recommended) / DOCX (Word);
+(3) Objective — target price / short-term trade / medium-term strategy / long-term investment / earnings review;
+(4) Position budget — a dollar amount or % of portfolio so I can compute real sizing, stops, and R:R (reply "skip" for analysis without sizing math);
+(5) Persona overlay — I'd suggest <X> for this ticker (see Persona Suggestion Table); want it as an appendix, swap to another persona, or skip?
+You can also reply with a one-liner like "standard, HTML, target price, $10k, skip persona" and I'll start straight away.`
 
-If the user requests technical analysis, K-line/candlestick analysis, RSI/KDJ timing, breakout confirmation, or short-term trading but does not specify the window, ask what period to analyze before running the script. Examples: today intraday, last 1 trading day, 1 week, 2 weeks, 1 month, daily swing, or weekly medium-term.
+Notes:
+- Always identify the company by name in the question so the user knows the ticker resolved correctly (the screenshot failure mode: user typing `DPZ` and not being sure Claude knows it's Domino's Pizza).
+- Backtest validation is **not** a separate question — it is automatically included for `full SOP`, and offered in the report footer for `basic`/`standard`.
+- Suggest the persona using the Persona Suggestion Table, matched to the ticker's profile. For a pre-revenue/unproven name, suggest skipping persona overlay.
 
-If the user requests a backtest but does not specify the strategy/persona/signal, the window, or transaction-cost assumption, follow the backtest module's Request Gate (`modules/backtest.md`) and ask the combined question there.
+### Partial specification
 
-If the user explicitly asks for "complete", "full", "professional report", or "完整报告", use `full SOP`. If the user asks for "quick", use `basic`. Use the user's latest language for the report.
+If the user already named some parameters ("full SOP on NVDA, DOCX"), ask only for the missing ones in one concise follow-up — never re-ask what they already gave.
 
-See `references/depth-framework.md` for the depth matrix. For `full` reports, also read `references/Stock_Analysis_SOP_v1.0.md` and follow the seven-step SOP unless the user narrows the task.
+### Fully specified — proceed
+
+If the user supplied everything (depth + format + objective + budget-or-skip, persona optional), or replied with the one-liner, proceed directly to analysis. Do not ask again.
+
+### Explicit backtest request
+
+An explicit backtest request (`backtest NVDA`, `回测 NVDA KDJ 5 年`) skips the combined question and routes directly to `modules/backtest.md`'s Request Gate (mode / strategy or persona or signal / window / costs).
+
+### Technical Window Defaults (by Objective)
+
+When the user states an objective, derive the technical window automatically — don't ask:
+
+| Objective | Daily/weekly charts | Intraday charts | `fetch_price_charts.py` flags |
+|---|---|---|---|
+| general overview (when objective left unspecified) | daily + weekly | no | (omit `--intraday-window`) |
+| target price | daily + weekly | no | (omit) |
+| short-term trade (< 1 week hold) | daily | yes | `--intraday-window 1d --intraday-resolution 5` |
+| medium-term strategy (1–3 months) | daily + weekly | no | (omit) |
+| long-term investment (> 1 year) | weekly + monthly-derived | no | (omit) |
+| earnings review | daily | yes — last ~10 trading days | `--intraday-window 2w --intraday-resolution 15` |
+| risk check | daily + weekly | no | (omit) |
+
+If the user *explicitly* requests a window contrary to the table ("show me intraday for a long-term investment"), honor the explicit request and note the deviation. The table is the default, not a mandate.
+
+### Position Budget Use
+
+If the user provides a position budget (dollar amount or % of portfolio), pass it into `modules/risk-position.md` so that section produces concrete numbers:
+
+- exact share count or notional based on the entry level
+- dollar value at each scenario (bear / base / bull)
+- dollar value at the stop level (max loss in $)
+- dollar value at the take-profit / target (max gain in $)
+- R:R ratio with dollar context
+- whether the position exceeds the recommended single-stock cap (default 5% of portfolio; warn if the user's budget implies a higher concentration)
+
+If the user replied `skip`, the risk section uses % terms only (no dollar figures) and does not produce a sizing recommendation.
+
+### Persona Suggestion Table
+
+Use this to recommend the best-fit persona in the combined question (item 5), or when the user later asks "which persona suits this name". Match by the **dominant ticker profile**, not by sector alone:
+
+| Ticker profile | Suggest | Reasoning |
+|---|---|---|
+| Mature dividend payer (utilities, consumer staples, telecoms) | `graham` | Defensive value, dividend record, P/E and P/B discipline |
+| Compounder with durable moat (premium consumer brand, fortress balance sheet) | `buffett` | Owner earnings, circle of competence, long-term hold |
+| Disruptive innovator with R&D > 15% (AI, biotech, EV, fintech) | `wood` or `fisher` | Disruptive growth + exponential model (Wood) or 15-point growth quality (Fisher) |
+| Quality growth at GARP price (mid-cap with 15–25% earnings growth, PEG ≤ 1) | `lynch` | GARP, 6-category classification |
+| Deep value / cheap on hard numbers (FCF yield ≥ 15%, P/B < 1.5) | `burry` | FCF yield, balance sheet, contrarian |
+| Macro-sensitive cyclical (commodity, bank, autos, industrial) | `druckenmiller` | Macro regime overlay, momentum, asymmetric R:R |
+| Complex / multi-business conglomerate, capital allocator | `munger` | ROIC, capital allocation, multidisciplinary |
+| Long-duration quality growth with patient management | `fisher` | 15-point checklist, scuttlebutt, R&D depth |
+| Pre-revenue biotech or true unproven concept | none (suggest skip) | Most personas explicitly refuse pre-profit; respect Conflict Rules |
+
+For ambiguous tickers, suggest two candidates ("Buffett for the moat take, Burry for the value-trap check") rather than forcing a single pick.
+
+### Other gate triggers
+
+- If the user explicitly asks for "complete", "full", "professional report", or "完整报告" — depth is known (`full SOP`); ask the combined question for the remaining items only.
+- If the user asks for "quick" — depth is known (`basic`); ask the combined question for the remaining items only.
+- If the user requests **technical analysis, K-line, RSI/KDJ, breakout, or short-term trading** — that implies depth and objective leanings, but still ask the combined question for whatever is unconfirmed. Never ask the technical window directly; derive it from the objective.
+- If the user gives a position budget but no objective, still ask the objective in the combined question; do not silently default it.
+- Use the user's latest language for the report.
+
+See `references/depth-framework.md` for the depth matrix. For `full` reports, follow the Workflow + Adaptive Module Selection sections of this SKILL.md — they are the canonical SOP. (A longer prescriptive 7-step SOP file used to live at `references/Stock_Analysis_SOP_v1.0.md` but was removed for over-constraining Claude's judgment; the Workflow + per-module Standalone Mode + report-template now carry the SOP role.)
 
 ## Report Depth Matrix
 
@@ -60,13 +132,37 @@ See `references/depth-framework.md` for the depth matrix. For `full` reports, al
 |---|---|---|
 | `basic` | Quick view, first-pass ticker opinion, simple risk check | Data Health, price/trend snapshot, key support/resistance, valuation snapshot, main risks, short conditional view. No full DCF and no formal debate. |
 | `standard` | Normal stock analysis, target price, report, or strategy request | Macro, sector/peer, fundamentals, financial statement review, valuation, technicals, risk plan, bear/base/bull range, and one counter-thesis section. No formal multi-agent debate unless requested. |
-| `full SOP` | Complete SOP, institutional-style report, professional report, multi-agent debate, or highest-depth request | Full seven-step SOP, primary-source evidence, Evidence Ledger, relative valuation and DCF/scenario math, daily/weekly/requested intraday charts, sensitivity, catalysts, invalidation levels, scoring, event risk, and real multi-subagent debate (1-3 rounds, persona-driven where requested) when the runtime supports the Agent tool; single-LLM-labeled fallback otherwise. |
+| `full SOP` | Complete SOP, institutional-style report, professional report, multi-agent debate, or highest-depth request | Full institutional workflow per this SKILL.md (macro → sector → fundamentals → financials → valuation → technicals + backtest validation → sentiment → risk → debate), primary-source evidence, Evidence Ledger, relative valuation and DCF/scenario math, daily/weekly/requested intraday charts, sensitivity, catalysts, invalidation levels, scoring, event risk, persona overlay (if user opted in), and real multi-subagent debate (1-3 rounds) when the runtime supports the Agent tool; single-LLM-labeled fallback otherwise. |
 
 ## Report Format Gate
 
-Default to Markdown only when the user explicitly says Markdown, md, chat report, or when they ask for an answer in chat. Produce DOCX when the user asks for docx, Word, formal document, polished report, or a file attachment.
+Three supported output formats. Pick based on user phrasing:
 
-For DOCX output:
+| Format | Trigger phrases | Best for |
+|---|---|---|
+| **Markdown** (default) | "markdown", "md", "in chat", "just answer", or nothing specified beyond depth | In-chat reading, copy-paste, sharing snippets, LLM hand-off |
+| **HTML** | "html", "web page", "polished report", "with charts", "send to my browser", "save as a file" | Best general-purpose polished output — embeds charts cleanly via `<img>`, opens in any browser, self-contained single file, plain-text LLM-friendly, renders as an artifact in Cowork |
+| **DOCX** | "docx", "Word", "Word document", "for my boss who uses Word" | When the recipient specifically needs Word (e.g., compliance template, corporate distribution). Otherwise prefer HTML — DOCX is a binary blob that loses chart fidelity and is harder for LLMs to re-read. |
+
+If the user is ambiguous about format and mentions charts, file output, or polish without naming a format, **default to HTML**, not DOCX.
+
+### Markdown formatting
+
+Use the schema in `references/report-template.md`. Inline image references with relative paths to chart PNGs. Tables in standard Markdown.
+
+### HTML formatting
+
+Use `references/report-template.html` as the structural and styling reference. Key rules:
+
+- Single self-contained `.html` file (CSS inline in `<style>`, no external CDN), opens in any browser
+- Embed chart PNGs via `<img src="NVDA_daily_chart.png" alt="...">` with paths relative to the HTML file's location, OR base64-encode them inline for a fully portable single file
+- Use semantic HTML (`<h1>`, `<h2>`, `<table>`, `<details>`/`<summary>` for collapsible Evidence Ledger / raw data)
+- Light + dark CSS via `prefers-color-scheme` media query
+- Include a `@media print` stylesheet so the HTML prints to PDF cleanly via the browser
+- Same content schema as Markdown — schema in `references/report-template.md` is format-agnostic
+- For Cowork users: in addition to (or instead of) saving the file, render as an artifact via the artifact tool so the report is live inside the chat
+
+### DOCX formatting
 
 - Use a document-generation workflow available in the environment, such as the `documents` or `doc` skill when present.
 - Include title, data timestamp, Data Health, executive summary, consistent section headings, tables, daily/weekly/requested intraday charts, evidence ledger, and disclaimer.
@@ -90,7 +186,8 @@ Modules are internal instruction files in `modules/`. Load them with the `Read` 
 | Insider trades, news flow, EPS revisions, short interest | `modules/sentiment.md` | standard, full SOP (skip basic unless asked) |
 | Position sizing, stop loss, R:R, event risk, sector cap | `modules/risk-position.md` | all depths |
 | Bull/bear debate, investment committee, persona showdown | `modules/debate-panel.md` | full SOP, or when explicitly requested |
-| Historical backtest (indicator / signal / persona) | `modules/backtest.md` | only when user requests backtest |
+| Backtest signal-validation (validates technical thesis automatically) | `modules/backtest.md` (signal mode) | full SOP default; opt-in for standard |
+| Backtest indicator strategy / persona allocation (full equity curve) | `modules/backtest.md` (indicator/persona mode) | only when user explicitly asks for a backtest |
 
 ### Investor persona modules
 
@@ -114,7 +211,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
 ## Workflow
 
 1. Resolve the ticker, exchange, company name, sector, industry, and report language.
-2. Confirm depth and user objective via the Request Gate: quick view, target price, short-term trade, medium-term swing, long-term investment, earnings review, risk check, or backtest.
+2. Confirm depth, objective, and (if applicable) position budget via the Request Gate. Derive the technical window from the objective via the Technical Window Defaults table — do not ask the user.
 3. Collect source data with dates:
    - price, volume, market cap, beta, 52-week range
    - latest 10-K/10-Q, earnings release, guidance, transcript if available
@@ -125,22 +222,38 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
 4. Fetch API-based daily, weekly, and requested intraday charts:
    - Use the bundled data script: `scripts/fetch_price_charts.py <TICKER> --key-file <workspace-key-file> --output-dir <workspace>/outputs --benchmark SPY --sector <sector-etf>`.
    - In Claude.ai web, use `--output-dir auto` so the script writes to a platform-appropriate output directory.
-   - When the user specifies or confirms an intraday/K-line window, add `--intraday-window <today|1d|2d|5d|1w|2w|1m|3m> --intraday-resolution <1|5|15|30|60>`.
+   - **Add intraday flags only when the Technical Window Defaults table says so for the user's objective.** Don't add intraday for `target price`, `medium-term`, `long-term`, `general overview`, or `risk check`. Do add for `short-term trade` (`--intraday-window 1d --intraday-resolution 5`) and `earnings review` (`--intraday-window 2w --intraday-resolution 15`). Honor explicit user overrides if they ask for a window outside the default.
    - Intraday source defaults to Yahoo chart current-session bars because that is sufficient for K-line/KDJ/volume analysis and avoids repeated failures from realtime-only candle endpoints. Use `--intraday-source auto` or `--intraday-source finnhub` only when the user explicitly asks for a realtime-capable candle source.
    - The script uses `scripts/data_provider.py` to choose direct API, prefetched web JSON, or yfinance data, then generates artifacts only: quote status, daily/weekly OHLCV-derived indicators, optional intraday candle-derived indicators, daily/weekly/intraday PNG charts, benchmark/sector relative strength data, volume ratios, support/resistance distances, KDJ cross events, indicator metadata, and a `technical_data_summary`.
    - KDJ values are computed from OHLCV high/low/close bars. Daily/weekly KDJ is completed-bar close-based. Intraday KDJ is candle-based from the selected intraday source. Always describe `intraday.source`, `data_quality`, `has_intraday_today`, `usable_for_report`, latest bar timestamp, resolution, and window. Do not frame `is_realtime=false` as a data failure when `usable_for_report=true`; simply state that the chart is current-session or delayed bars rather than exchange-direct realtime.
    - Charts should include candlesticks, volume, KDJ, support/resistance lines, and detected KDJ golden/death crosses when data is available.
    - The data script must not make recommendations or label a setup bullish/bearish. Modules interpret its data by priority: trend structure, relative strength, volume, support/resistance, then indicator confirmation.
    - If chart generation fails, disclose the failure in Data Health and do not invent chart readings.
-5. **Read the modules required by depth using the Module Routing table above.** For each loaded module, apply its methodology to produce the corresponding section of the report. The module's "Standalone Markdown Report Mode" structure becomes the report section structure when invoked by the orchestrator. Required by depth:
-   - `basic` — `modules/valuation.md`, `modules/technical.md`, `modules/risk-position.md`. Add `modules/company-fundamentals.md` only if needed.
+5. **Read the modules required by depth using the Module Routing table above.** For each loaded module, apply its methodology to produce the corresponding section of the report. The module's "Standalone Markdown Report Mode" structure becomes the report section structure when invoked by the orchestrator. **The "Required for depth" column is a default starting point, not a hard mandate** — see Adaptive Module Selection below. The defaults are:
+   - `basic` — `modules/valuation.md`, `modules/technical.md`, `modules/risk-position.md`. Add `modules/company-fundamentals.md` if business model materially drives the thesis.
    - `standard` — add `modules/macro.md`, `modules/sector.md`, `modules/company-fundamentals.md`, `modules/financial-statements.md`, `modules/sentiment.md`.
-   - `full SOP` — all of the above plus `modules/debate-panel.md`.
-6. For `full SOP` AND when the `Agent` tool is available, run the debate as real parallel subagents per the Subagent Dispatch Protocol in `modules/debate-panel.md`. Copy the relevant persona module content inline into each subagent prompt. The panel will ask the user for round count (1/2/3) and persona roster via its Request Gate.
-7. For `full SOP`, the company-fundamentals section must follow `references/institutional-company-analysis-bilingual.md` and include investment question, business/segment map, unit economics, industry structure, competitive position, catalysts, management/capital allocation, financial translation, thesis breakers, and evidence gaps.
-8. For backtest requests, Read `modules/backtest.md` and run `scripts/backtest.py`. The backtest module enforces in-sample / out-of-sample reporting, transaction-cost honesty, and overfit checks — do not skip those.
-9. Build an evidence ledger: bullish facts, bearish facts, uncertain/missing data, catalysts, invalidation points.
-10. Produce the requested Markdown or DOCX report using `references/report-template.md`.
+   - `full SOP` — all of the above plus `modules/debate-panel.md` plus the backtest signal-validation step (6).
+6. **Backtest signal-validation (full SOP default, opt-in for standard).** After the Technical section identifies the strongest actionable signal (KDJ golden cross / SMA50-200 cross / RSI mean reversion / BB lower bounce / MACD signal cross / RSI oversold / volume spike / new 52w high / BB squeeze breakout), Read `modules/backtest.md` and run:
+   ```
+   scripts/backtest.py <TICKER> --mode signal --signal <identified_signal> --start <5y-ago> --end <today> --key-file <key> --output-dir <out> --no-charts
+   ```
+   Read the resulting bundle's `signal_stats` block and surface it as a **Backtest Validation** sub-section under Technical (not a standalone chapter). One short table with hit rate / mean return / t-stat at +5d, +20d, +60d horizons + baseline comparison + the `significant_at_p05` flag. If the technical thesis doesn't map to a registered signal, skip this step and note "no registered signal matches the technical thesis; backtest validation not run". Do not run more than one signal validation per report unless the user asks.
+7. For `full SOP` AND when the `Agent` tool is available, run the debate as real parallel subagents per the Subagent Dispatch Protocol in `modules/debate-panel.md`. Copy the relevant persona module content inline into each subagent prompt. The panel will ask the user for round count (1/2/3) and persona roster via its Request Gate.
+8. **Persona overlay (if user opted in via Request Gate)** — Read `modules/investors/<persona>.md` plus `references/persona-skill-template.md` and produce a Persona Lens appendix using the same evidence ledger. Surface scoring breakdown + conviction band. Respect Conflict And Pass Rules — if the persona refuses to opine, that's correct behavior.
+9. For `full SOP`, the company-fundamentals section must follow `references/institutional-company-analysis-bilingual.md` and include investment question, business/segment map, unit economics, industry structure, competitive position, catalysts, management/capital allocation, financial translation, thesis breakers, and evidence gaps.
+10. For explicit backtest requests (not the auto signal-validation in step 6), Read `modules/backtest.md` and run `scripts/backtest.py` with whichever mode the user picked. The backtest module enforces in-sample / out-of-sample reporting, transaction-cost honesty, and overfit checks — do not skip those.
+11. Build an evidence ledger: bullish facts, bearish facts, uncertain/missing data, catalysts, invalidation points.
+12. Produce the requested report in the chosen format: Markdown or DOCX using `references/report-template.md`, or HTML using `references/report-template.html`.
+
+## Adaptive Module Selection
+
+The Module Routing "Required for depth" column is the **default** starting set, not a fixed list. Adjust based on:
+
+- **The user's stated objective.** If the user explicitly asked for a target price, weight `valuation.md` and `sentiment.md` heavier and compress `macro.md` to a one-paragraph context check. If the user asked for a swing trade, weight `technical.md` and `risk-position.md` and compress fundamentals to a one-paragraph backdrop. If the user asked for an earnings review, expand `financial-statements.md` and `sentiment.md` (especially analyst revisions), and compress macro/sector.
+- **Genuine non-applicability.** If a module truly doesn't apply to this ticker (e.g., sentiment for a delisted-on-foreign-exchange micro-cap with no analyst coverage; macro for a market-neutral pair the user is rotating into), mark that section as **n/a — <one-line reason>** instead of writing padded low-confidence content. Do not skip silently; document the skip.
+- **Data Health.** If a module's required data isn't fetchable, downgrade to a brief acknowledgement with the gap noted, not a full prose section pretending data exists.
+
+When in doubt, lean toward including a section briefly rather than skipping. The bar for skipping is "this section would be misleading or pointless if written", not "I don't have lots to say".
 
 ## Data Failure and Fallback Rules
 
@@ -201,17 +314,28 @@ Use scoring as a `Conviction / Setup Quality Score`, not a mechanical buy/sell r
 
 ## Module Contract
 
-Modules are loaded on demand by the orchestrator and can also be invoked directly by user request ("just run the technical module on NVDA"). When loaded by the orchestrator, each module must return a Markdown section that can be merged into the final report. When invoked standalone, the module produces a self-contained Markdown sub-report in the user's language.
+Modules are loaded on demand by the orchestrator and can also be invoked directly by user request ("just run the technical module on NVDA"). When loaded by the orchestrator, each module returns a Markdown section that can be merged into the final report. When invoked standalone, the module produces a self-contained Markdown sub-report in the user's language.
 
-Required for both modes:
+### Required elements
 
 - section title and one-sentence conclusion
 - data timestamp and source dates
-- 2-5 analytical paragraphs for `full SOP`; 1-3 for `standard`; compact bullets only for `basic`
 - at least one table when the section is metric-heavy
 - bullish interpretation, bearish interpretation, and neutral/uncertain evidence
-- explicit implication for target price, short-term trading, medium-term strategy, long-term investment, earnings review, or risk
+- explicit implication for the user's stated objective (target price / short-term trade / medium-term strategy / long-term investment / earnings review / risk)
 - missing data, low-confidence assumptions, and what would change the conclusion
+
+### Length
+
+**Length scales with evidence weight, not depth tier.** Write more where you have substantive evidence and a meaningful interpretation; write less when the takeaway is short and clear. The depth tier sets the **expected** ceiling but not a floor:
+
+- `full SOP` — most sections will be 2–5 analytical paragraphs because the evidence base is rich; some may be one tight paragraph if the situation is clear-cut (e.g., dominant moat, obvious thesis). Padding for length is a failure mode, not a virtue.
+- `standard` — most sections 1–3 paragraphs.
+- `basic` — compact bullets are usually right; prose only where it adds clarity.
+
+When a section is genuinely brief because the situation is genuinely simple, that's fine. Note explicitly that brevity is intentional ("Macro context is unambiguous risk-on; no further analysis warranted") so the reader doesn't assume Claude was lazy.
+
+### Standalone direct-invocation
 
 When a user calls a module directly, produce a self-contained Markdown sub-report in the user's language. If ticker, objective, depth, or technical window is unclear and materially affects the answer, ask one concise clarification before analysis. End standalone sub-reports with `Not investment advice -- for your own research.`.
 
@@ -242,12 +366,13 @@ See `references/strategy-registry.md`, `references/persona-criteria-v1.md`, and 
 ## Output Rules
 
 - Match the user's language.
-- Produce a professional Markdown or DOCX report according to the requested format.
-- For `full SOP`, do not produce a short memo. Expand macro, sector, fundamentals, financial statements, valuation, technicals, risk, and debate into analytical paragraphs plus tables. Include assumptions, evidence dates, counterarguments, sensitivity, catalysts, and explicit invalidation levels.
-- For `full SOP`, run a final report QA gate before answering: verify that Data Health, Evidence Ledger, macro, sector/peer, fundamentals, financials, valuation, technicals, risk plan, scoring, event risk, debate, bear/base/bull scenarios, final strategy, missing-data section, and disclaimer are present. If any required section cannot be completed, include it with a low-confidence or missing-data explanation rather than omitting it.
+- Produce a professional Markdown, HTML, or DOCX report according to the requested format. Use `references/report-template.md` for Markdown structure and `references/report-template.html` for HTML structure + styling. DOCX follows the same schema.
+- For `full SOP`, do not produce a short memo unless the evidence is genuinely thin. Default is rich analytical paragraphs across macro, sector, fundamentals, financial statements, valuation, technicals (with backtest validation sub-section), risk, debate. Include assumptions, evidence dates, counterarguments, sensitivity, catalysts, and explicit invalidation levels.
+- For `full SOP`, run a final report QA gate before answering. Expected sections: Data Health, Evidence Ledger, macro, sector/peer, fundamentals, financials, valuation, technicals + backtest validation, risk plan, scoring, event risk, debate, bear/base/bull scenarios, final strategy, missing-data section, and disclaimer. **A section may be marked `n/a — <reason>` (one line) when it genuinely doesn't apply to this ticker** (e.g., relative-valuation peers for a unique business; macro regime for a market-neutral position). The QA gate accepts `n/a` with a reason as a valid completion state — it does not accept silent omission.
 - Include daily and weekly chart images when API data and chart generation are available.
-- For `basic`, give a shorter professional memo with enough data to be useful.
+- For `basic`, give a shorter professional memo with enough data to be useful. End it with the footer suggesting upgrades (full SOP / backtest / DOCX / persona lens / different technical window).
 - Include exact data dates and source names when possible.
 - Do not fabricate filings, estimates, analyst targets, or prices.
 - Keep recommendations conditional: "if price holds X", "if earnings revisions improve", "if macro remains Risk-On".
 - Include both short-term and medium-term strategy when the user asks for target price or trading plan.
+- **Avoid padding.** A short, sharp section that says exactly what's true beats a long section with low-confidence filler. Note 

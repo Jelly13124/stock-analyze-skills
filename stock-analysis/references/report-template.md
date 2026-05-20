@@ -1,8 +1,10 @@
 # Professional Report Template
 
-Use the user's language. This schema is mandatory for `standard` and `full SOP`; omit only sections that are genuinely out of scope for `basic`.
+Use the user's language. This schema is the default structure for `standard` and `full SOP`. Per Adaptive Module Selection in `SKILL.md`, a section may be marked `n/a — <one-line reason>` when it genuinely does not apply to the ticker, or compressed when the user's objective de-emphasizes it — but never silently dropped. `basic` uses a trimmed subset.
 
-For `full SOP`, the report must read like a professional research report, not a short memo. Each major section needs analytical paragraphs, dated evidence, tables where useful, uncertainty, what would change the view, and direct implications for target price, short-term trade, medium-term strategy, long-term investment, earnings review, or risk.
+This schema is format-agnostic: the same 12-section content fills a Markdown report (`report-template.md` structure), an HTML report (`report-template.html` structure + styling), or a DOCX report.
+
+For `full SOP`, the report should read like a professional research report, not a short memo. Each substantive section needs analytical paragraphs, dated evidence, tables where useful, uncertainty, what would change the view, and direct implications for the user's objective (target price, short-term trade, medium-term strategy, long-term investment, earnings review, or risk). Length scales with evidence weight — a clear-cut section can be one tight paragraph; note when brevity is intentional. Do not pad.
 
 Do not paste a short checklist as the final report. Fill the schema with complete analysis.
 
@@ -16,8 +18,15 @@ Before finalizing a `full SOP` report, verify:
 - Technical analysis includes weekly, daily, and requested intraday tables, chart paths, support/resistance, breakout/invalidation, ATR risk band, and reward/risk.
 - Risk plan includes conservative, balanced, and aggressive frameworks when account size or risk style is unknown.
 - Event Risk Check covers earnings/company catalysts and macro events inside the selected window.
-- Debate includes 2-3 rounds, role confidence, rejected arguments, and moderator synthesis.
+- Debate includes 1-3 rounds, role confidence, rejected arguments, and moderator synthesis.
+- Backtest validation sub-section is present under Technical (signal event-study on the strongest identified signal), unless no registered signal matched the technical thesis.
 - Final strategy is split by short-term, medium-term, and long-term when requested.
+
+## Per-Format Notes
+
+- **Markdown** — this file's schema, standard Markdown tables, relative `![](...)` image links to chart PNGs.
+- **HTML** — use `report-template.html` for structure + styling (self-contained CSS, dark mode, print stylesheet, collapsible `<details>` sections). Same 12-section content.
+- **DOCX** — DOCX Formatting Rules below.
 
 ## DOCX Formatting Rules
 

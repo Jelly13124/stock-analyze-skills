@@ -1,0 +1,425 @@
+<!--
+HTML Report Template for stock-analysis
+========================================
+Use as the structural + styling reference for HTML output. Single self-
+contained file. No external CDN. Drop chart PNGs alongside the .html file
+and reference them with relative <img src="...">.
+
+Content schema is the same as references/report-template.md — fill the same
+12 sections. This file just defines the visual + structural layout.
+
+For Cowork users: render the same HTML as an artifact via the artifact tool
+in addition to (or instead of) saving the file. The artifact view shows the
+report live inside the chat.
+
+To produce a final report, replace every {{PLACEHOLDER}} with the actual
+content and save as {TICKER}_report.html alongside the chart PNGs.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Analysis Report — {{TICKER}}</title>
+  <style>
+    :root {
+      --bg:           #ffffff;
+      --fg:           #1a1a1a;
+      --muted:        #6b7280;
+      --border:       #e5e7eb;
+      --accent:       #2563eb;
+      --accent-soft:  #eff6ff;
+      --bull:         #047857;
+      --bear:         #b91c1c;
+      --neutral:      #92400e;
+      --table-stripe: #f9fafb;
+      --code-bg:      #f3f4f6;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:           #0f172a;
+        --fg:           #e5e7eb;
+        --muted:        #94a3b8;
+        --border:       #334155;
+        --accent:       #60a5fa;
+        --accent-soft:  #1e293b;
+        --bull:         #34d399;
+        --bear:         #f87171;
+        --neutral:      #fbbf24;
+        --table-stripe: #1e293b;
+        --code-bg:      #1e293b;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+    main {
+      max-width: 920px;
+      margin: 2rem auto;
+      padding: 0 1.5rem 4rem;
+    }
+    header.title-block {
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 1rem;
+      margin-bottom: 2rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin: 0 0 0.4rem;
+      color: var(--accent);
+    }
+    h2 {
+      font-size: 1.4rem;
+      margin: 2.5rem 0 0.8rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font-size: 1.1rem;
+      margin: 1.5rem 0 0.6rem;
+      color: var(--muted);
+    }
+    p { margin: 0.6rem 0; }
+    .timestamp-block {
+      background: var(--accent-soft);
+      border-left: 3px solid var(--accent);
+      padding: 0.8rem 1rem;
+      margin: 1rem 0 2rem;
+      font-size: 0.92rem;
+    }
+    .timestamp-block dt {
+      font-weight: 600;
+      display: inline;
+      color: var(--muted);
+    }
+    .timestamp-block dd {
+      display: inline;
+      margin: 0 1.2rem 0 0.3rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.8rem 0 1.4rem;
+      font-size: 0.94rem;
+    }
+    th, td {
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: var(--accent-soft);
+      font-weight: 600;
+    }
+    tbody tr:nth-child(even) { background: var(--table-stripe); }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .bull, .Bull, .bullish { color: var(--bull); font-weight: 600; }
+    .bear, .Bear, .bearish { color: var(--bear); font-weight: 600; }
+    .neutral, .Neutral { color: var(--neutral); font-weight: 600; }
+    figure {
+      margin: 1.4rem 0;
+      text-align: center;
+    }
+    figure img {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    figcaption {
+      font-size: 0.86rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
+    }
+    details {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.4rem 0.8rem;
+      margin: 1rem 0;
+      background: var(--table-stripe);
+    }
+    details summary {
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0.3rem 0;
+    }
+    code, pre {
+      background: var(--code-bg);
+      border-radius: 3px;
+      padding: 0.1rem 0.3rem;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      padding: 0.8rem 1rem;
+      overflow-x: auto;
+    }
+    .disclaimer {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+      font-style: italic;
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .score-badge {
+      display: inline-block;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      font-weight: 600;
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+    @media print {
+      body { background: white; color: black; }
+      main { max-width: 100%; margin: 0; padding: 1rem; }
+      h1, h2, h3 { page-break-after: avoid; }
+      table, figure, details { page-break-inside: avoid; }
+      a { color: black; text-decoration: none; }
+      details { border: 1px solid #ccc; }
+      details[open] summary { font-weight: bold; }
+    }
+  </style>
+</head>
+<body>
+<main>
+
+<header class="title-block">
+  <h1>Stock Analysis Report: {{TICKER}}</h1>
+  <p style="color: var(--muted); margin: 0;">{{COMPANY_NAME}} · {{EXCHANGE}} · {{SECTOR}} / {{INDUSTRY}}</p>
+</header>
+
+<dl class="timestamp-block">
+  <dt>Report generated:</dt> <dd>{{REPORT_DATETIME}}</dd>
+  <dt>Market data:</dt> <dd>{{QUOTE_TIMESTAMP}}</dd>
+  <dt>Filing date:</dt> <dd>{{FILING_DATE}}</dd>
+  <dt>Technical chart window:</dt> <dd>{{CHART_WINDOW}}</dd>
+  <br>
+  <dt>Depth:</dt> <dd>{{DEPTH}}</dd>
+  <dt>Format:</dt> <dd>HTML</dd>
+  <dt>Objective:</dt> <dd>{{OBJECTIVE}}</dd>
+  <dt>Position budget:</dt> <dd>{{POSITION_BUDGET_OR_NA}}</dd>
+</dl>
+
+<h2>Data Health</h2>
+<table>
+  <thead>
+    <tr><th>Item</th><th>Status</th><th>Source</th><th>Timestamp</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Quote</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Daily chart / indicators</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Weekly chart / indicators</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Intraday chart (if requested)</td><td></td><td></td><td></td><td>source / data_quality / has_intraday_today / usable_for_report</td></tr>
+    <tr><td>Financials / filings</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Earnings release / transcript</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Macro data</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Sector / peer data</td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>News / catalysts</td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>Executive Summary</h2>
+<ul>
+  <li><strong>Overall view:</strong> </li>
+  <li><strong>Main bullish argument:</strong> <span class="bull"></span></li>
+  <li><strong>Main bearish risk:</strong> <span class="bear"></span></li>
+  <li><strong>Bear / base / bull target range:</strong> </li>
+  <li><strong>Strategy type:</strong> </li>
+  <li><strong>Confidence:</strong> </li>
+  <li><strong>Key invalidation:</strong> </li>
+  <li><strong>Score:</strong> <span class="score-badge">{{SCORE}}/100</span></li>
+</ul>
+
+<details>
+  <summary>Evidence Ledger ({{N_ITEMS}} items)</summary>
+  <table>
+    <thead>
+      <tr><th>Claim</th><th>Evidence</th><th>Source</th><th>Date</th><th>Direction</th><th>Confidence</th></tr>
+    </thead>
+    <tbody>
+      <tr><td></td><td></td><td></td><td></td><td class="bull">Bullish</td><td>High</td></tr>
+    </tbody>
+  </table>
+</details>
+
+<h2>Macro Regime</h2>
+<p></p>
+
+<h2>Sector and Peer Comparison</h2>
+<p></p>
+
+<h2>Company Fundamentals</h2>
+<p></p>
+
+<h2>Financial Statement Review</h2>
+<p></p>
+
+<h2>Valuation Analysis</h2>
+<p></p>
+
+<h2>Technical Analysis</h2>
+
+<figure>
+  <img src="{{TICKER}}_daily_chart.png" alt="{{TICKER}} daily chart with KDJ, support/resistance, volume">
+  <figcaption>Daily chart — KDJ, support/resistance, volume.</figcaption>
+</figure>
+
+<figure>
+  <img src="{{TICKER}}_weekly_chart.png" alt="{{TICKER}} weekly chart">
+  <figcaption>Weekly chart — medium-term trend.</figcaption>
+</figure>
+
+<!-- Include intraday figure only when objective is short-term trade or earnings review -->
+<figure>
+  <img src="{{TICKER}}_intraday_1d_5m_chart.png" alt="{{TICKER}} intraday chart">
+  <figcaption>Intraday chart (5-minute bars).</figcaption>
+</figure>
+
+<h3>Multi-timeframe trend</h3>
+<table>
+  <thead>
+    <tr><th>Timeframe</th><th>Trend</th><th>Price vs SMA50/200</th><th>RSI</th><th>KDJ</th><th>MACD</th><th>Read</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Weekly</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Daily</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Intraday</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h3>Backtest Validation</h3>
+<!-- Auto-included for full SOP per Workflow step 6.
+     Replace with actual table from {TICKER}_backtest_bundle.json signal_stats. -->
+<table>
+  <thead>
+    <tr><th>Horizon</th><th>Signal hit rate</th><th>Signal mean return</th><th>t-stat</th><th>Baseline hit rate</th><th>Baseline mean</th><th>Significant @ p&lt;.05</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">+5d</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td class="num">+20d</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td class="num">+60d</td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td class="num"></td><td></td></tr>
+  </tbody>
+</table>
+<p><em>Signal tested: {{SIGNAL_NAME}}. Window: {{BACKTEST_WINDOW}}. Bundle: <code>{{BACKTEST_BUNDLE_PATH}}</code>.</em></p>
+
+<h2>Risk and Position Sizing</h2>
+<!-- If user provided a position budget, fill the budget-aware columns.
+     If user replied 'skip', omit the dollar columns and use % only. -->
+<table>
+  <thead>
+    <tr><th>Plan</th><th>Entry</th><th>Stop</th><th>Target</th><th>R:R</th><th>Position size</th><th>Max $ loss</th><th>Max $ gain</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Conservative</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Balanced</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td>Aggressive</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>Bear / Base / Bull Scenarios</h2>
+<table>
+  <thead>
+    <tr><th>Scenario</th><th>Target range</th><th>Time horizon</th><th>Key assumptions</th><th>Confidence</th><th>Invalidation</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="bear">Bear</td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="neutral">Base</td><td></td><td></td><td></td><td></td><td></td></tr>
+    <tr><td class="bull">Bull</td><td></td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h2>Conviction / Setup Quality Score</h2>
+<table>
+  <thead>
+    <tr><th>Module</th><th class="num">Weight</th><th class="num">Score</th><th>Rationale</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Macro and sector environment</td><td class="num">15</td><td class="num"></td><td></td></tr>
+    <tr><td>Company fundamentals</td><td class="num">25</td><td class="num"></td><td></td></tr>
+    <tr><td>Valuation</td><td class="num">20</td><td class="num"></td><td></td></tr>
+    <tr><td>Technical setup</td><td class="num">20</td><td class="num"></td><td></td></tr>
+    <tr><td>Risk and event profile</td><td class="num">15</td><td class="num"></td><td></td></tr>
+    <tr><td>Catalyst / news quality</td><td class="num">5</td><td class="num"></td><td></td></tr>
+    <tr><th>Total</th><th class="num">100</th><th class="num">{{SCORE}}</th><th></th></tr>
+  </tbody>
+</table>
+
+<h2>Event Risk Check</h2>
+<ul>
+  <li>Upcoming earnings: </li>
+  <li>Macro events inside trading window: </li>
+  <li>Company-specific events: </li>
+  <li>Options IV / gap-risk notes: </li>
+  <li>Effect on confidence: </li>
+</ul>
+
+<details>
+  <summary>Debate Summary (full SOP only)</summary>
+  <h3>Round 1 — Independent Theses</h3>
+  <p><strong>Bull analyst:</strong> </p>
+  <p><strong>Bear analyst:</strong> </p>
+  <p><strong>Quant analyst:</strong> </p>
+  <p><strong>Risk manager:</strong> </p>
+  <h3>Round 2 — Challenges</h3>
+  <p></p>
+  <h3>Round 3 — Revised Confidence</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Confidence</th><th>What would change the view</th></tr></thead>
+    <tbody>
+      <tr><td>Bull</td><td></td><td></td></tr>
+      <tr><td>Bear</td><td></td><td></td></tr>
+      <tr><td>Quant</td><td></td><td></td></tr>
+      <tr><td>Risk manager</td><td></td><td></td></tr>
+    </tbody>
+  </table>
+  <h3>Moderator Synthesis</h3>
+  <ul>
+    <li>Agreed facts: </li>
+    <li>Rejected arguments: </li>
+    <li>Unresolved disputes: </li>
+    <li>Final target range: </li>
+    <li>Strategy: </li>
+    <li>Monitoring checklist: </li>
+  </ul>
+</details>
+
+<details>
+  <summary>Persona Lens Appendix (optional)</summary>
+  <!-- Included only when user opted into persona overlay in Request Gate.
+       Embed the persona's standalone Markdown report rendered as HTML. -->
+  <p></p>
+</details>
+
+<h2>Final Conditional Strategy</h2>
+<ul>
+  <li><strong>Short-term:</strong> </li>
+  <li><strong>Medium-term:</strong> </li>
+  <li><strong>Long-term:</strong> </li>
+  <li><strong>Watch levels:</strong> </li>
+  <li><strong>Stop / invalidation logic:</strong> </li>
+  <li><strong>What would change the view:</strong> </li>
+  <li><strong>Next 3–5 monitoring items:</strong> </li>
+</ul>
+
+<details>
+  <summary>Missing Data / Low-Confidence Areas</summary>
+  <table>
+    <thead><tr><th>Missing or conflicting item</th><th>Impact</th><th>Fallback used</th><th>Confidence effect</th></tr></thead>
+    <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
+  </table>
+</details>
+
+<p class="disclaimer">Not investment advice — for your own research.</p>
+
+</main>
+</body>
+</html>

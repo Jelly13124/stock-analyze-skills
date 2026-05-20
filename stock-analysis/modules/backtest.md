@@ -97,7 +97,35 @@ When invoked directly by a user, produce a self-contained Markdown report in the
 - Provide the Markdown report inline AND link to the equity curve PNG, trades CSV, and bundle JSON paths.
 - Show top 3 / bottom 3 trades; reference the CSV path for the rest.
 - For DOCX output, embed the equity curve PNG and the headline-metrics table; reference the trades CSV but do not embed.
-- For full SOP integration: the `stock-analysis` orchestrator may invoke this skill to validate a strategy idea surfaced in technical analysis. In that case, return the headline metrics table + overfit verdict + 2-paragraph plain-language interpretation, not the full Standalone Report.
+- For full SOP integration: the `stock-analysis` orchestrator may invoke this skill to validate a strategy idea surfaced in technical analysis. In that case, follow the SOP Integration Mode below — not the full Standalone Report.
+
+## SOP Integration Mode
+
+When the orchestrator calls this module as **step 6 of the full SOP workflow**, behave differently from the Standalone Backtest Report:
+
+**Trigger** — the Technical section identified a strongest actionable signal (e.g., KDJ golden cross, SMA50-200 cross, RSI oversold). The orchestrator invokes the script in **signal mode only** with a 5-year window:
+
+```
+scripts/backtest.py <TICKER> --mode signal --signal <identified_signal> \
+  --start <today-minus-5y> --end <today> \
+  --key-file <key> --output-dir <out> --no-charts
+```
+
+**Output shape** — produce a compact **Backtest Validation** sub-section that lives inside the Technical chapter (not a standalone backtest report). Required content:
+
+1. One paragraph: which signal was tested, over what window, with what assumptions.
+2. One table with rows for +5d, +20d, +60d forward horizons; columns for the signal's hit rate, mean return, t-stat, and the same metrics from the baseline (random dates in the same window).
+3. One sentence on the `significant_at_p05` flag and what it implies for the technical thesis.
+4. One sentence on what the result says about the technical setup — does the signal historically work on this ticker, or is the current setup a low-base-rate bet?
+5. Link to the bundle JSON path (the orchestrator passes the output dir).
+
+**Do NOT** in SOP integration mode:
+- Produce the 10-section Standalone Backtest Report
+- Run indicator or persona mode (those are explicit user requests, not SOP defaults)
+- Run more than one signal validation per report unless the user asks
+- Block the report if signal validation fails — note the failure and continue
+
+**If no registered signal matches the technical thesis** (e.g., technical analysis says "watching for a break above $X resistance"; no such signal in the registry), skip step 6 and write one line in the report: "No registered signal matches the current technical thesis; backtest validation not run."
 
 ## Example Commands
 
