@@ -48,6 +48,7 @@ for _candidate in _candidates:
         break
 
 from data_provider import (  # noqa: E402
+    ensure_yfinance,
     get_daily_ohlcv,
     get_fundamentals_history,
     get_output_dir,
@@ -968,6 +969,9 @@ def main() -> int:
         return 2
 
     print(f"[backtest] {ticker} mode={args.mode} window={start}..{end}", file=sys.stderr)
+
+    # Ensure the no-API-key fallback (yfinance) is available before fetching.
+    ensure_yfinance()
 
     df, ticker_meta = fetch_daily_df(ticker, keys, start, end)
     if df.empty:

@@ -19,10 +19,14 @@ Works in Claude Code, Claude Desktop, Codex, and (with one extra zip step) Claud
 
 ## What's New (2026-05)
 
-- **Single-skill consolidation** — The 18 previously separate `stock-*` skills are now 18 modules under one `stock-analysis` skill. Installation goes from "18 ZIP uploads" to one. The orchestrator's top-level `SKILL.md` is a router that lazily `Read`s modules from `stock-analysis/modules/` on demand, so token cost still scales with the work. The 18 originals are archived under `_legacy/` for rollback. See `MIGRATION_PLAN.md` for the design and `_legacy/README.md` for rollback steps.
+- **HTML-only output** — Every report is now a single self-contained HTML file: charts embedded, light/dark mode, prints cleanly to PDF. The output-format question was removed — DOCX (slow, loses chart fidelity) and Markdown-as-a-report (no chart embedding) were dropped.
+- **No API key needed — `yfinance` is the primary source** — With no key present, `yfinance` is the main data source for real-time quotes, OHLCV, and fundamentals (auto-installed on first run); Yahoo covers intraday. Web search fills non-price gaps (news, analyst revisions, catalyst dates) with a recency check. API keys are now fully optional.
+- **Section Length Budget** — Per-section word budgets with a floor (genuinely detailed) and a ceiling (no padding). Company Fundamentals and Financial Statement Review carry the heaviest budget and are the most detailed sections of the report.
+- **Persona-debate toggle** — The Request Gate's only persona question is one on/off toggle (full SOP only): persona-agent debate vs. generic Bull/Bear/Quant/Risk roles. Claude still auto-selects *which* personas from the ticker profile — the user is never asked to name them.
+- **Single-skill consolidation** — The 18 previously separate `stock-*` skills are now 18 modules under one `stock-analysis` skill. Installation goes from "18 ZIP uploads" to one. The orchestrator's top-level `SKILL.md` is a router that lazily `Read`s modules from `stock-analysis/modules/` on demand, so token cost still scales with the work. See `MIGRATION_PLAN.md` for the consolidation design; the 18 originals remain recoverable from git history.
 - **`stock-backtest` v1** (now `modules/backtest.md`) — Single-ticker backtest engine. Three modes: rule-based indicator strategies (KDJ golden cross, SMA50/200, RSI mean reversion, Bollinger lower bounce, MACD), signal event-study (does signal X predict positive forward returns at +1/+5/+10/+20/+60d?), and investor-persona allocation backtest (Lynch / Graham / Burry / Druckenmiller-lite). Reports in-sample vs out-of-sample metrics, deducts transaction costs, and refuses to label a strategy "works" if the out-of-sample evidence is weak. Buffett / Munger / Fisher / Wood personas return `data_insufficient` in v1 — they're deferred to v2 until the fundamentals layer covers owner earnings + ROIC time series.
 - **8 investor persona skills** — Buffett · Munger · Graham · Lynch · Fisher · Wood · Druckenmiller · Burry. Invoke any one to converse in that investor's voice, or substitute them into the debate panel.
-- **Real multi-subagent debate** — `stock-debate-panel` now dispatches one parallel `Agent` tool call per role per round in Claude Code. Asks the user for round count (1 / 2 / 3) and persona roster at call time. Falls back to single-LLM simulation only when the Agent tool isn't available, and labels the transcript as such.
+- **Real multi-subagent debate** — `modules/debate-panel.md` dispatches one parallel `Agent` tool call per role per round in Claude Code. Round count defaults to 2 for full SOP; the persona roster is auto-selected from the ticker profile. Falls back to single-LLM simulation only when the Agent tool isn't available, and labels the transcript as such.
 - **`stock-sentiment-analysis`** added — 4-channel sentiment skill covering insider transactions (20%), news flow (25%), analyst EPS revisions (35%), and short interest / options positioning (20%).
 - **Quantitative layer** added to financials, technical, valuation, and risk skills — explicit numeric thresholds (ROE > 15%, P/B < 1.5, FCF yield ≥ 15%, ADX, Z-score, Owner Earnings, vol-adjusted position cap, etc.) sit on top of the existing qualitative framework rather than replacing it.
 
@@ -71,7 +75,7 @@ Each persona has explicit Conflict And Pass Rules — a Buffett persona refusing
 | Persona-based debate | Yes — Claude Code Agent tool dispatches each persona as an independent subagent | Yes — LangGraph nodes |
 | Backtesting | **v1 single-ticker (indicator / signal / persona) — `stock-backtest` skill** | Yes (multi-stock + walk-forward) |
 | Setup cost | `git clone` + copy folders | `pip install` + LLM API key + data API key |
-| Final output | Professional Markdown / DOCX report | JSON signals + reasoning |
+| Final output | Professional self-contained HTML report | JSON signals + reasoning |
 
 The two projects solve different problems. ai-hedge-fund is a programmable hedge-fund simulator. This repo is an analyst's prompt library that produces report-grade output and stays useful when data is incomplete.
 
@@ -108,9 +112,11 @@ Build one ZIP:
 
 Then upload `claude_web_zips/stock-analysis.zip` via the Skills UI. Detailed cross-platform notes in `docs/CROSS_PLATFORM.md`.
 
-## API Key Setup
+## API Keys (optional)
 
-Create `key.txt` in the repo root:
+**No API key is required.** With no key present, the data scripts use `yfinance` as the primary source for real-time quotes, OHLCV, and fundamentals — it is auto-installed on first run — and Yahoo for intraday charts. Web search fills non-price gaps (news, analyst revisions, catalyst dates) with a recency check.
+
+Adding keys is optional and only changes which provider is tried first. To use them, create `key.txt` in the repo root:
 
 ```text
 FINNHUB_API_KEY=your_finnhub_key
@@ -120,13 +126,11 @@ FRED_API_KEY=your_fred_key
 
 | Key | Purpose | Required? |
 |---|---|---|
-| `FINNHUB_API_KEY` | Quotes and some intraday data | Recommended |
-| `ALPHA_VANTAGE_API_KEY` | Daily / weekly historical OHLCV | Recommended |
+| `FINNHUB_API_KEY` | Quotes and some intraday data | Optional |
+| `ALPHA_VANTAGE_API_KEY` | Daily / weekly historical OHLCV | Optional |
 | `FRED_API_KEY` | Macro data (rates, VIX, credit spreads) | Optional |
 
-Yahoo intraday charts work without any key — the data script uses Yahoo as the default intraday source.
-
-Smoke test:
+Smoke test (works with or without `key.txt` — omit `--key-file` if you have no keys):
 
 ```powershell
 python .\stock-analysis\scripts\fetch_price_charts.py NFLX `
@@ -150,10 +154,10 @@ All five modes use the single `/stock-analysis` slash command — what changes i
 ### Mode 1 — Full SOP report
 
 ```text
-/stock-analysis NFLX full SOP md intraday target-price / short-term / medium-term / long-term / earnings-review
+/stock-analysis NFLX full SOP, objective target-price (or short-term / medium-term / long-term / earnings-review)
 ```
 
-The orchestrator collects evidence, reads every required module in order, and assembles a single Markdown / DOCX report.
+The orchestrator collects evidence, reads every required module in order, and assembles a single self-contained HTML report.
 
 ### Mode 2 — Single module
 
@@ -179,7 +183,7 @@ The orchestrator loads `modules/investors/buffett.md` and runs the conversation 
 /stock-analysis Buffett vs Wood debate on TSLA, 2 rounds
 ```
 
-The orchestrator loads `modules/debate-panel.md`, asks for round count + persona roster if missing, and dispatches each role as an independent parallel `Agent` subagent (in Claude Code; falls back to labeled single-LLM mode otherwise).
+The orchestrator loads `modules/debate-panel.md` and dispatches each role as an independent parallel `Agent` subagent (in Claude Code; falls back to labeled single-LLM mode otherwise). Round count defaults to 2; Claude auto-selects the persona roster from the ticker profile.
 
 ### Mode 5 — Backtest
 
@@ -197,9 +201,9 @@ Outputs equity-curve PNG, trades CSV, and a Markdown verdict with in-sample vs o
 |---|---|---|
 | `basic` | Quick view, first-pass opinion | Data Health, price snapshot, valuation snapshot, key risks |
 | `standard` | Normal research request | Macro / sector / fundamentals / financials / valuation / technicals / sentiment / risk plan + bear / base / bull range |
-| `full SOP` | Institutional-style report or explicit "full" request | Full 7-step SOP + Evidence Ledger + DCF / scenario math + charts + scoring + event risk + real multi-subagent debate (1-3 rounds) |
+| `full SOP` | Institutional-style report or explicit "full" request | Full institutional workflow + Evidence Ledger + DCF / scenario math + charts + scoring + event risk + backtest validation + real multi-subagent debate (1-3 rounds) |
 
-If the user enters a bare ticker, the main skill asks for depth, output format, objective, and technical window before generating anything.
+If the user enters a bare ticker, the main skill asks for depth, objective, position budget, and — for full SOP — debate mode (persona agents or generic roles) before generating anything. The report is always delivered as a self-contained HTML file; output format is not asked, and the technical window is derived from the objective.
 
 ## Repository Layout
 
@@ -216,35 +220,4 @@ stock-analyze-skills/
 │   │   ├── valuation.md
 │   │   ├── technical.md
 │   │   ├── sentiment.md
-│   │   ├── risk-position.md
-│   │   ├── debate-panel.md
-│   │   ├── backtest.md
-│   │   └── investors/
-│   │       ├── buffett.md       munger.md       graham.md       lynch.md
-│   │       └── fisher.md        wood.md         druckenmiller.md burry.md
-│   ├── references/
-│   │   ├── Stock_Analysis_SOP_v1.0.md
-│   │   ├── depth-framework.md
-│   │   ├── report-template.md
-│   │   ├── institutional-company-analysis-bilingual.md
-│   │   ├── persona-skill-template.md
-│   │   ├── strategy-registry.md
-│   │   ├── persona-criteria-v1.md
-│   │   ├── persona-criteria-v1.yaml
-│   │   └── overfitting-checklist.md
-│   └── scripts/
-│       ├── data_provider.py
-│       ├── fetch_price_charts.py
-│       ├── backtest.py
-│       └── web_prefetch_helper.md
-├── _legacy/                              # 18 original sibling folders, archived for rollback
-├── docs/                                 # cross-platform notes
-├── tools/                                # zip builder for Claude.ai web (single ZIP)
-├── MIGRATION_PLAN.md                     # the 18→1 consolidation design
-├── BACKTEST_DESIGN.md                    # backtest v1 design
-└── README.md / README.zh-CN.md
-```
-
-## Disclaimer
-
-These skills produce research output, not investment advice. Every report this suite generates ends with `Not investment advice -- for your own research.` — that line is non-negotiable.
+│   │   ├

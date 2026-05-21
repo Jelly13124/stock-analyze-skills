@@ -94,10 +94,9 @@ When invoked directly by a user, produce a self-contained Markdown report in the
 ## Output Rules
 
 - Match the user's language.
-- Provide the Markdown report inline AND link to the equity curve PNG, trades CSV, and bundle JSON paths.
+- Provide the report inline AND link to the equity curve PNG, trades CSV, and bundle JSON paths.
 - Show top 3 / bottom 3 trades; reference the CSV path for the rest.
-- For DOCX output, embed the equity curve PNG and the headline-metrics table; reference the trades CSV but do not embed.
-- For full SOP integration: the `stock-analysis` orchestrator may invoke this skill to validate a strategy idea surfaced in technical analysis. In that case, follow the SOP Integration Mode below — not the full Standalone Report.
+- For full SOP integration: the `stock-analysis` orchestrator may invoke this skill to validate a strategy idea surfaced in technical analysis. In that case, follow the SOP Integration Mode below — not the full Standalone Report. The validation result is embedded into the HTML report as the Backtest Validation sub-section under Technical.
 
 ## SOP Integration Mode
 

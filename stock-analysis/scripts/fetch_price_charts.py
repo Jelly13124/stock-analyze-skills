@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from data_provider import (
+    ensure_yfinance,
     get_daily_ohlcv,
     get_intraday_ohlcv,
     get_output_dir,
@@ -520,6 +521,9 @@ def main() -> int:
     output_dir = get_output_dir() if args.output_dir == "auto" else Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     keys = load_keys(args.key_file)
+
+    # Ensure the no-API-key fallback (yfinance) is available before fetching.
+    ensure_yfinance()
 
     daily = get_daily_ohlcv(ticker, keys)
     weekly = get_weekly_ohlcv(ticker, keys)

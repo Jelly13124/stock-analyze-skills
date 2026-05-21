@@ -15,9 +15,16 @@ Run a structured investment-committee debate after the evidence layer is complet
 
 ## Request Gate
 
-Before running the panel, confirm two parameters. If the user has not specified them, ask one combined question (mirroring the request-gate pattern used by `stock-analysis` and `stock-technical-analysis`):
+**Two things are settled before the panel runs; this module never asks the user *which* personas to use.**
 
-`Please confirm debate rounds (1 / 2 / 3) and participating personas (default = generic Bull / Bear / Quant / Risk / Moderator; or specify investor personas, e.g. "Buffett vs Wood + standard Quant/Risk/Moderator").`
+1. **Persona mode (on/off)** — set by item (4) of the `stock-analysis` Request Gate. *On* (the default): the Bull/Bear slots are filled by investor personas, which Claude auto-selects from the ticker profile (Persona Selection Table in `stock-analysis/SKILL.md` plus the swap table below). *Off*: run the debate with generic Bull / Bear / Quant / Risk / Moderator roles and load no persona module.
+2. **Round count** — auto-defaulted (see Round options below): 2 rounds for `full SOP`, 1 for direct standalone invocations.
+
+- **Invoked by the orchestrator for a `full SOP` report** — use the persona mode passed from the gate, the auto-selected roster (if persona mode is on), and 2 rounds. Ask nothing.
+- **Invoked directly / standalone by the user** — assume persona mode on and auto-select the roster; only if the round count is unclear, ask one short question: `Debate rounds: 1 (independent theses), 2 (adds a challenge round — default), or 3 (adds a confidence-revision round)?`
+- **User named personas explicitly** ("Buffett vs Wood") — honor that roster exactly (implies persona mode on).
+
+Never ask the user to pick the personas; when persona mode is on, Claude always selects the matchup itself.
 
 ### Round options
 
@@ -29,7 +36,7 @@ If the user does not specify, default to 2 rounds for `full SOP` reports and 1 r
 
 ### Persona options
 
-Default: generic Bull / Bear / Quant / Risk / Moderator (5 roles).
+Default roles: Bull / Bear / Quant / Risk / Moderator (5 roles). Claude **auto-selects** which persona fills each Bull/Bear slot — see "Auto-selecting the roster" below.
 
 Acceptable substitutions for the Bull and Bear slots from the persona skill suite:
 
@@ -45,6 +52,17 @@ Other patterns the user may request:
 
 - **All-persona panel** — replace generic Bull/Bear with two persona pairs (e.g. Buffett vs Wood + Burry vs Lynch + Munger as moderator). 5+ subagents per round.
 - **Concentrated head-to-head** — only two personas (e.g. Wood vs Burry on TSLA), no Quant/Risk/Moderator. Useful for binary-thesis stocks.
+
+### Auto-selecting the roster
+
+**When persona mode is on**, Claude picks the roster itself, without asking the user:
+
+- Fill the Bull and Bear slots with investor personas chosen via the Persona Selection Table in `stock-analysis/SKILL.md`: a Bull-side persona (growth / quality lens) and a Bear-side persona (value / skeptic lens) that create genuine tension — e.g. a disruptive-growth name → Wood (Bull) vs Burry (Bear); a mature compounder → Buffett (Bull-side quality) vs Graham (Bear-side value discipline); a macro-cyclical → Druckenmiller (Bull) vs Munger (Bear).
+- If the ticker profile is ambiguous, still pick two contrasting personas rather than falling back to generic roles — the user opted into persona debate.
+- Keep Quant / Risk / Moderator as generic roles unless the user asks otherwise.
+- Only deviate from auto-selection when the user explicitly names personas.
+
+**When persona mode is off**, use generic Bull / Bear / Quant / Risk / Moderator for all five roles and load no persona module.
 
 ## Subagent Dispatch Protocol
 
@@ -189,7 +207,7 @@ Every standalone report or main-report section must include: a conclusion, sourc
 
 - Macro, sector, fundamentals, financial statements, valuation, technical, sentiment, and risk outputs.
 - Evidence ledger with source dates.
-- User objective, time horizon, and (for the Request Gate) round count and persona roster.
+- User objective and time horizon. Round count is auto-defaulted (2 for `full SOP`) and the persona roster is auto-selected — neither is asked of the user unless they raise it.
 - Current price and valuation targets if available.
 
 Do not run debate on an empty evidence base. If evidence is missing, ask for data collection or state that the debate is low confidence.

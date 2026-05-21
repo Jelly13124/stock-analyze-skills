@@ -19,10 +19,14 @@
 
 ## 最近更新 (2026-05)
 
-- **单 skill 合并** — 原本 18 个 `stock-*` 独立 skill 现在合并成一个 `stock-analysis` skill 下的 18 个 module。安装从 "上传 18 个 ZIP" 变成 "上传 1 个 ZIP"。顶层 `SKILL.md` 是路由器, 按需 `Read` 加载 `stock-analysis/modules/` 下的对应 module, token 成本仍然随实际工作量缩放。18 个原始 skill 备份在 `_legacy/` 下供回滚。设计见 `MIGRATION_PLAN.md`, 回滚步骤见 `_legacy/README.md`。
+- **统一 HTML 输出** — 每份报告现在都是单个自包含 HTML 文件: 图表内嵌、明暗双色、可直接打印成 PDF。输出格式问题已移除 — DOCX (生成慢、丢图表保真度) 和"Markdown 当报告" (不能嵌图) 都已弃用。
+- **无需 API key — `yfinance` 是主数据源** — 没有 key 时, `yfinance` 是实时报价、OHLCV、基本面的主数据源 (首次运行自动安装), 盘中走 Yahoo。Web 搜索负责补非价格类缺口 (新闻、分析师修正、催化剂日期), 并强制做时效复查。API key 现在完全可选。
+- **Section Length Budget (分区块字数预算)** — 每个区块给字数区间, 有下限 (确保够细) 和上限 (杜绝注水)。公司基本面和财报审阅拿到最高字数预算, 是全报告最详细的两个区块。
+- **人格辩论开关** — Request Gate 里唯一的人格相关提问是一个开关 (仅 full SOP): 多智能体辩论用投资人人格还是通用 Bull/Bear/Quant/Risk 角色。具体用**哪些**人格仍由 Claude 按个股画像自动选 — 从不让用户点名。
+- **单 skill 合并** — 原本 18 个 `stock-*` 独立 skill 现在合并成一个 `stock-analysis` skill 下的 18 个 module。安装从 "上传 18 个 ZIP" 变成 "上传 1 个 ZIP"。顶层 `SKILL.md` 是路由器, 按需 `Read` 加载 `stock-analysis/modules/` 下的对应 module, token 成本仍然随实际工作量缩放。设计见 `MIGRATION_PLAN.md`; 18 个原始 skill 可从 git 历史恢复。
 - **`stock-backtest` v1** (现在是 `modules/backtest.md`) — 单股票回测引擎。三种模式: 规则化指标策略 (KDJ 金叉、SMA50/200、RSI 均值回归、布林下轨反弹、MACD)、信号事件研究 (信号 X 在 +1/+5/+10/+20/+60 日的远期收益是否为正?)、以及投资大师配仓回测 (Lynch / Graham / Burry / Druckenmiller-lite)。报告样本内 / 样本外指标分离, 扣除真实交易成本, 当样本外证据不足时**拒绝**给出"策略有效"结论。Buffett / Munger / Fisher / Wood 人格在 v1 返回 `data_insufficient` — 它们等 v2 把 fundamentals 层扩展到 owner earnings + ROIC 时间序列后再开放。
 - **8 个投资大师人格 skill** — Buffett · Munger · Graham · Lynch · Fisher · Wood · Druckenmiller · Burry。可单独激活,以该大师视角对话;也可在辩论环节中替换通用 Bull / Bear 角色。
-- **真实多 subagent 辩论** — `stock-debate-panel` 现在在 Claude Code 中会**真正**派遣并行 `Agent` 工具调用,每个角色每轮一个独立 subagent。调用时询问辩论轮数 (1 / 2 / 3) 和参与人格列表。仅在 Agent tool 不可用时降级为单 LLM 顺序模式,且必须在 transcript 头部明确标注。
+- **真实多 subagent 辩论** — `modules/debate-panel.md` 在 Claude Code 中会**真正**派遣并行 `Agent` 工具调用,每个角色每轮一个独立 subagent。full SOP 默认 2 轮;参与人格由 Claude 按个股画像自动选取。仅在 Agent tool 不可用时降级为单 LLM 顺序模式,且必须在 transcript 头部明确标注。
 - **新增 `stock-sentiment-analysis`** — 4 通道情绪分析: insider 交易 (20%) + news flow (25%) + 分析师 EPS revision (35%) + short interest / 期权定位 (20%)。
 - **量化层加在财报 / 技术 / 估值 / 风险 4 个 skill** — 显式数值阈值 (ROE > 15%、P/B < 1.5、FCF yield ≥ 15%、ADX、Z-score、Owner Earnings、波动率调整仓位上限等) **叠加在**已有的定性框架之上,不替换。
 
@@ -71,7 +75,7 @@
 | 人格驱动辩论 | 是 — Claude Code 原生 Agent tool 派每个 persona 为独立 subagent | 是 — LangGraph nodes |
 | 回测 | **v1 单股 (指标 / 信号 / 大师) — `stock-backtest` skill** | 有 (多股 + walk-forward) |
 | 接入成本 | `git clone` + 拷贝目录 | `pip install` + LLM API key + 数据 API key |
-| 输出形式 | 专业级 Markdown / DOCX 报告 | JSON 信号 + reasoning |
+| 输出形式 | 专业级单文件 HTML 报告 | JSON 信号 + reasoning |
 
 两个项目解决不同问题。ai-hedge-fund 是可编程的对冲基金模拟器。本仓库是分析师的提示词库,产出报告级输出,数据不全时也能继续工作。
 
@@ -108,9 +112,11 @@ Copy-Item .\stock-analysis "$env:USERPROFILE\.codex\skills\" -Recurse -Force
 
 然后上传 `claude_web_zips/stock-analysis.zip`。详细跨平台说明见 `docs/CROSS_PLATFORM.md`。
 
-## API Key 配置
+## API Key (可选)
 
-在 repo 根目录创建 `key.txt`:
+**不需要任何 API key。** 没有 key 时, 数据脚本用 `yfinance` 作为实时报价、OHLCV、基本面的主数据源 (首次运行自动安装), 盘中走 Yahoo。Web 搜索负责补非价格类缺口 (新闻、分析师修正、催化剂日期), 并做时效复查。
+
+加 key 是可选的, 只影响"先试哪个数据源"。要用的话, 在 repo 根目录创建 `key.txt`:
 
 ```text
 FINNHUB_API_KEY=your_finnhub_key
@@ -120,13 +126,11 @@ FRED_API_KEY=your_fred_key
 
 | Key | 用途 | 是否必需 |
 |---|---|---|
-| `FINNHUB_API_KEY` | 报价和部分盘中数据 | 推荐 |
-| `ALPHA_VANTAGE_API_KEY` | 日线 / 周线历史 OHLCV | 推荐 |
+| `FINNHUB_API_KEY` | 报价和部分盘中数据 | 可选 |
+| `ALPHA_VANTAGE_API_KEY` | 日线 / 周线历史 OHLCV | 可选 |
 | `FRED_API_KEY` | 宏观数据 (利率、VIX、信用利差) | 可选 |
 
-Yahoo 盘中 K 线不需要任何 key — 数据脚本默认用 Yahoo 作为盘中数据源。
-
-冒烟测试:
+冒烟测试 (有没有 `key.txt` 都能跑 — 没有 key 就省略 `--key-file`):
 
 ```powershell
 python .\stock-analysis\scripts\fetch_price_charts.py NFLX `
@@ -150,10 +154,10 @@ outputs/NFLX_test/NFLX_intraday_1d_5m_chart.png
 ### 模式 1 — 完整 SOP 报告
 
 ```text
-/stock-analysis NFLX full SOP md 盘中 目标价 / 短线交易 / 中期策略 / 长期投资 / 财报分析
+/stock-analysis NFLX full SOP, 目标 目标价 (或 短线交易 / 中期策略 / 长期投资 / 财报分析)
 ```
 
-orchestrator 收集证据,按顺序 `Read` 必需的 module,组装成单份 Markdown / DOCX 报告。
+orchestrator 收集证据,按顺序 `Read` 必需的 module,组装成单份自包含 HTML 报告。
 
 ### 模式 2 — 单 module 调用
 
@@ -179,7 +183,7 @@ orchestrator 加载 `modules/investors/buffett.md`, 整个对话以该大师视�
 /stock-analysis Buffett vs Wood 辩论 TSLA, 2 轮
 ```
 
-orchestrator 加载 `modules/debate-panel.md`, 如果没指定轮数或人格名单会先问, 然后把每个角色作为独立并行 `Agent` subagent 派遣 (Claude Code 中) 或退化到带标签的单 LLM 模式 (其他环境)。
+orchestrator 加载 `modules/debate-panel.md`, 把每个角色作为独立并行 `Agent` subagent 派遣 (Claude Code 中) 或退化到带标签的单 LLM 模式 (其他环境)。轮数默认 2;人格名单由 Claude 按个股画像自动选取。
 
 ### 模式 5 — 回测
 
@@ -197,9 +201,9 @@ orchestrator 加载 `modules/debate-panel.md`, 如果没指定轮数或人格名
 |---|---|---|
 | `basic` | 快速一瞥、初判 | Data Health、价格快照、估值快照、关键风险 |
 | `standard` | 常规研究请求 | 宏观 / 行业 / 基本面 / 财报 / 估值 / 技术 / 情绪 / 风险计划 + bear/base/bull 区间 |
-| `full SOP` | 机构级报告或明确"完整"请求 | 完整 7 步 SOP + 证据账本 + DCF / 情景计算 + 图表 + 评分 + 事件风险 + 真实多 subagent 辩论 (1-3 轮) |
+| `full SOP` | 机构级报告或明确"完整"请求 | 完整机构级工作流 + 证据账本 + DCF / 情景计算 + 图表 + 评分 + 事件风险 + 回测验证 + 真实多 subagent 辩论 (1-3 轮) |
 
-如果用户只输入裸 ticker,主 skill 会先追问报告深度、输出格式、目标和技术窗口,再开始生成。
+如果用户只输入裸 ticker,主 skill 会先追问报告深度、目标、仓位预算,以及(仅 full SOP)辩论模式是否启用投资人人格,再开始生成。报告统一输出为单文件 HTML,不再追问输出格式;技术窗口由目标自动推导。
 
 ## 仓库结构
 
@@ -220,31 +224,4 @@ stock-analyze-skills/
 │   │   ├── debate-panel.md
 │   │   ├── backtest.md
 │   │   └── investors/
-│   │       ├── buffett.md       munger.md       graham.md       lynch.md
-│   │       └── fisher.md        wood.md         druckenmiller.md burry.md
-│   ├── references/
-│   │   ├── Stock_Analysis_SOP_v1.0.md
-│   │   ├── depth-framework.md
-│   │   ├── report-template.md
-│   │   ├── institutional-company-analysis-bilingual.md
-│   │   ├── persona-skill-template.md
-│   │   ├── strategy-registry.md
-│   │   ├── persona-criteria-v1.md
-│   │   ├── persona-criteria-v1.yaml
-│   │   └── overfitting-checklist.md
-│   └── scripts/
-│       ├── data_provider.py
-│       ├── fetch_price_charts.py
-│       ├── backtest.py
-│       └── web_prefetch_helper.md
-├── _legacy/                              # 18 个原 sibling 文件夹, 备份供回滚
-├── docs/                                 # 跨平台说明
-├── tools/                                # Claude.ai 网页端 zip 打包工具 (单 ZIP)
-├── MIGRATION_PLAN.md                     # 18→1 合并设计文档
-├── BACKTEST_DESIGN.md                    # backtest v1 设计文档
-└── README.md / README.zh-CN.md
-```
-
-## 免责声明
-
-本 skill 包产出研究分析,**不构成投资建议**。每份报告末尾都强制包含 `Not investment advice -- for your own research.`,这一行不可省略。
+│   │       ├

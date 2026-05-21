@@ -2,9 +2,12 @@
 """Cross-platform market data provider for stock-analysis skills.
 
 Provider order:
-1. Direct network data sources (Finnhub, Alpha Vantage, Yahoo chart).
-2. Pre-fetched JSON files written by Claude web tools.
-3. Optional yfinance fallback when installed and network is available.
+1. Direct API sources (Finnhub, Alpha Vantage, Yahoo chart) -- used only
+   when an API key is supplied.
+2. yfinance -- the PRIMARY source when no API key is present. Auto-installed
+   by ensure_yfinance() and used for live quotes, OHLCV, and fundamentals.
+3. Pre-fetched JSON files -- last resort for network-restricted environments
+   (e.g. Claude.ai web) where yfinance returns network_blocked.
 
 This module never prints API keys. Callers should disclose `provider` and
 `source` fields in report Data Health sections.
@@ -16,6 +19,7 @@ import json
 import os
 import re
 import socket
+import sys
 import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -450,6 +454,62 @@ def yahoo_chart_series(ticker: str, interval: str, window: str) -> dict:
     )
 
 
+_YFINANCE_BOOTSTRAP_DONE = False
+
+
+def ensure_yfinance() -> bool:
+    """Ensure the yfinance package is importable; pip-install it once if missing.
+
+    yfinance is the no-API-key fallback for quotes, OHLCV, and fundamentals.
+    Environments (Claude.ai web sandbox, fresh Cowork sessions) often don't have
+    it pre-installed. Calling this once at script startup means the fallback
+    actually works without depending on the caller remembering to pip install.
+
+    Returns True if yfinance is available afterwards, False otherwise. A False
+    return is not fatal — direct API and prefetched-JSON paths still work.
+    """
+    global _YFINANCE_BOOTSTRAP_DONE
+    try:
+        import yfinance  # noqa: F401
+        return True
+    except ImportError:
+        pass
+
+    if _YFINANCE_BOOTSTRAP_DONE:
+        return False
+    _YFINANCE_BOOTSTRAP_DONE = True
+
+    if direct_disabled():
+        print("[setup] yfinance missing and direct network disabled; relying on prefetched data.", file=sys.stderr)
+        return False
+
+    import subprocess  # noqa: PLC0415
+
+    print("[setup] yfinance not installed — attempting a one-time install...", file=sys.stderr)
+    attempts = (
+        [sys.executable, "-m", "pip", "install", "--quiet", "yfinance"],
+        [sys.executable, "-m", "pip", "install", "--quiet", "--break-system-packages", "yfinance"],
+        [sys.executable, "-m", "pip", "install", "--quiet", "--user", "yfinance"],
+    )
+    for args in attempts:
+        try:
+            result = subprocess.run(args, capture_output=True, text=True, timeout=180)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[setup] install attempt errored: {type(exc).__name__}", file=sys.stderr)
+            continue
+        if result.returncode == 0:
+            try:
+                import importlib
+                import yfinance  # noqa: F401
+                importlib.invalidate_caches()
+                print("[setup] yfinance installed OK.", file=sys.stderr)
+                return True
+            except ImportError:
+                continue
+    print("[setup] yfinance install failed — falling back to direct API / prefetched data only.", file=sys.stderr)
+    return False
+
+
 def yfinance_quote(ticker: str) -> dict:
     if direct_disabled():
         return {"status": "network_blocked", "source": "yfinance", "provider": "none"}
@@ -513,17 +573,20 @@ def get_quote(ticker: str, keys: dict[str, str]) -> dict:
         return direct
     attempts.append({"source": "finnhub", "status": direct.get("status"), "notice": direct.get("notice") or direct.get("error")})
 
-    prefetched = get_prefetched_quote(ticker)
-    if prefetched.get("status") == "ok":
-        prefetched["fallback_from"] = attempts
-        return prefetched
-    attempts.append({"source": "prefetched_web", "status": prefetched.get("status")})
-
+    # Primary no-key source: live yfinance quote. Tried before prefetched
+    # JSON because it is live data; prefetched JSON is a last resort for
+    # network-restricted environments where yfinance returns network_blocked.
     yf_quote = yfinance_quote(ticker)
     if yf_quote.get("status") == "ok":
         yf_quote["fallback_from"] = attempts
         return yf_quote
     attempts.append({"source": "yfinance", "status": yf_quote.get("status"), "notice": yf_quote.get("error")})
+
+    prefetched = get_prefetched_quote(ticker)
+    if prefetched.get("status") == "ok":
+        prefetched["fallback_from"] = attempts
+        return prefetched
+    attempts.append({"source": "prefetched_web", "status": prefetched.get("status")})
 
     return {"status": "all_providers_failed", "source": "none", "provider": "none", "fallback": attempts}
 
@@ -538,14 +601,8 @@ def get_daily_ohlcv(ticker: str, keys: dict[str, str], days: int = 252) -> dict:
         return direct
     attempts.append({"source": "alpha_vantage", "status": direct.get("status"), "notice": direct.get("notice") or direct.get("error")})
 
-    prefetched = get_prefetched_ohlcv(ticker, "daily", "prefetched_daily")
-    if prefetched.get("status") == "ok":
-        prefetched["rows"] = prefetched["rows"][-days:]
-        prefetched["fallback_from"] = attempts
-        return prefetched
-    attempts.append({"source": "prefetched_daily", "status": prefetched.get("status")})
-
-    # yfinance period syntax: use year units for long windows.
+    # Primary no-key source: live yfinance daily history, tried before
+    # prefetched JSON. yfinance period syntax: use year units for long windows.
     if days <= 30:
         yf_period = f"{days}d"
     elif days <= 365:
@@ -564,6 +621,14 @@ def get_daily_ohlcv(ticker: str, keys: dict[str, str], days: int = 252) -> dict:
         yf_daily["fallback_from"] = attempts
         return yf_daily
     attempts.append({"source": "yfinance_daily", "status": yf_daily.get("status"), "notice": yf_daily.get("error")})
+
+    prefetched = get_prefetched_ohlcv(ticker, "daily", "prefetched_daily")
+    if prefetched.get("status") == "ok":
+        prefetched["rows"] = prefetched["rows"][-days:]
+        prefetched["fallback_from"] = attempts
+        return prefetched
+    attempts.append({"source": "prefetched_daily", "status": prefetched.get("status")})
+
     return provider_result("all_providers_failed", source="none", provider="none", fallback=attempts)
 
 
@@ -574,17 +639,19 @@ def get_weekly_ohlcv(ticker: str, keys: dict[str, str]) -> dict:
         return direct
     attempts.append({"source": "alpha_vantage", "status": direct.get("status"), "notice": direct.get("notice") or direct.get("error")})
 
+    # Primary no-key source: live yfinance weekly history, tried before prefetched JSON.
+    yf_weekly = yfinance_history(ticker, "5y", "1wk", "yfinance_weekly")
+    if yf_weekly.get("status") == "ok":
+        yf_weekly["fallback_from"] = attempts
+        return yf_weekly
+    attempts.append({"source": "yfinance_weekly", "status": yf_weekly.get("status"), "notice": yf_weekly.get("error")})
+
     prefetched = get_prefetched_ohlcv(ticker, "weekly", "prefetched_weekly")
     if prefetched.get("status") == "ok":
         prefetched["fallback_from"] = attempts
         return prefetched
     attempts.append({"source": "prefetched_weekly", "status": prefetched.get("status")})
 
-    yf_weekly = yfinance_history(ticker, "5y", "1wk", "yfinance_weekly")
-    if yf_weekly.get("status") == "ok":
-        yf_weekly["fallback_from"] = attempts
-        return yf_weekly
-    attempts.append({"source": "yfinance_weekly", "status": yf_weekly.get("status"), "notice": yf_weekly.get("error")})
     return provider_result("all_providers_failed", source="none", provider="none", fallback=attempts)
 
 
@@ -838,9 +905,9 @@ def get_prefetched_fundamentals(ticker: str) -> dict:
 def get_fundamentals_history(ticker: str, keys: dict[str, str]) -> dict:
     """Return quarterly fundamentals time series for persona-mode backtests.
 
-    Provider order: yfinance (primary v1) → prefetched_web JSON. Finnhub
-    /stock/financials-reported parsing is deferred to v2 because XBRL concept
-    mapping is non-trivial. Schema is documented in BACKTEST_DESIGN.md §1.
+    Provider order: yfinance (primary v1) then prefetched_web JSON. Finnhub
+    financials-reported parsing is deferred to v2 because XBRL concept mapping
+    is non-trivial. Schema is documented in BACKTEST_DESIGN.md section 1.
     """
     attempts: list[dict] = []
 
@@ -865,6 +932,6 @@ def get_fundamentals_history(ticker: str, keys: dict[str, str]) -> dict:
         "data_quality": "unavailable",
         "fallback_from": attempts,
         "missing_fields": ["eps_diluted", "revenue", "fcf", "total_debt", "total_equity",
-                            "current_assets", "current_liabilities", "shares_diluted",
-                            "dividend_per_share"],
+                           "current_assets", "current_liabilities", "shares_diluted",
+                           "dividend_per_share"],
     }
