@@ -338,20 +338,22 @@ content and save as {TICKER}_report.html alongside the chart PNGs.
 </table>
 
 <h2>Conviction / Setup Quality Score</h2>
+<p>Weights are the risk-tolerance profile from the Scoring Framework — profile used: <strong>{{RISK_PROFILE}}</strong>.</p>
 <table>
   <thead>
-    <tr><th>Module</th><th class="num">Weight</th><th class="num">Score</th><th>Rationale</th></tr>
+    <tr><th>Category</th><th class="num">Weight</th><th class="num">Score 0-100</th><th>Rationale</th></tr>
   </thead>
   <tbody>
-    <tr><td>Macro and sector environment</td><td class="num">15</td><td class="num"></td><td></td></tr>
-    <tr><td>Company fundamentals</td><td class="num">25</td><td class="num"></td><td></td></tr>
-    <tr><td>Valuation</td><td class="num">20</td><td class="num"></td><td></td></tr>
-    <tr><td>Technical setup</td><td class="num">20</td><td class="num"></td><td></td></tr>
-    <tr><td>Risk and event profile</td><td class="num">15</td><td class="num"></td><td></td></tr>
-    <tr><td>Catalyst / news quality</td><td class="num">5</td><td class="num"></td><td></td></tr>
+    <tr><td>Macro and sector environment</td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td>Company fundamentals</td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td>Valuation (margin of safety)</td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td>Technical setup</td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td>Risk and event profile</td><td class="num"></td><td class="num"></td><td></td></tr>
+    <tr><td>Catalyst / news quality</td><td class="num"></td><td class="num"></td><td></td></tr>
     <tr><th>Total</th><th class="num">100</th><th class="num">{{SCORE}}</th><th></th></tr>
   </tbody>
 </table>
+<p>Risk-tolerance sensitivity: {{SCORE_CONSERVATIVE}} Conservative / {{SCORE_BALANCED}} Balanced / {{SCORE_AGGRESSIVE}} Aggressive.</p>
 
 <h2>Event Risk Check</h2>
 <ul>

@@ -48,14 +48,15 @@ A bare ticker (`NVDA`, `分析一下 DPZ`, `NVDA 怎么样`) specifies none of t
 `Before I analyze <TICKER> (<one-line company identification, e.g. "Domino's Pizza">), please confirm:
 (1) Depth — basic (quick snapshot) / standard (full analyst report) / full SOP (institutional-grade: debate, scoring, scenarios, backtest validation);
 (2) Objective — target price / short-term trade / medium-term strategy / long-term investment / earnings review;
-(3) Position budget — a dollar amount or % of portfolio so I can compute real sizing, stops, and R:R (reply "skip" for analysis without sizing math);
+(3) Position & risk — (a) budget: a dollar amount or % of portfolio; (b) do you already hold <TICKER>, and if so your average cost basis; (c) risk tolerance: conservative / balanced / aggressive. Reply "skip" to any part you'd rather not give;
 (4) Debate mode (full SOP only) — should the multi-agent debate use investor-persona agents (Buffett / Wood / Burry etc. — I auto-select the matchup) or generic Bull / Bear / Quant / Risk roles? Default is persona agents.
-You can also reply with a one-liner like "full SOP, target price, $10k, persona debate" and I'll start straight away. The report is always delivered as an HTML file — format is not asked.`
+You can also reply with a one-liner like "standard, target price, $10k, already hold at $9.50, balanced risk" and I'll start straight away. The report is always delivered as an HTML file — format is not asked.`
 
 Notes:
 - Always identify the company by name in the question so the user knows the ticker resolved correctly (the screenshot failure mode: user typing `DPZ` and not being sure Claude knows it's Domino's Pizza).
 - **Output format is not asked** — every report is a self-contained HTML file (see Output Format below).
 - Backtest validation is **not** a separate question — it is automatically included for `full SOP`, and offered in the report footer for `basic`/`standard`.
+- **Item (3) shapes the risk section.** Budget → concrete dollar sizing in `risk-position.md`. "Already hold it at $X" → the report frames the call as hold / add / trim / exit with unrealized P&L vs scenarios, not a fresh entry. Risk tolerance → selects the conservative/balanced/aggressive framework directly. Any part the user skips falls back to its default — see Position & Risk Profile Use below.
 - **Item (4) is the only persona question, and only matters for `full SOP`** (basic/standard have no debate). It is a simple on/off toggle for *persona-based* debate — Claude still auto-selects *which* personas; the user is never asked to name them. If the user picks `full SOP` and skips item (4), default to persona agents. See the Persona Selection Table and Investor Persona Routing below.
 
 ### Partial specification
@@ -64,7 +65,7 @@ If the user already named some parameters ("full SOP on NVDA, target price"), as
 
 ### Fully specified — proceed
 
-If the user supplied everything (depth + objective + budget-or-skip, plus debate mode when depth is `full SOP`), or replied with the one-liner, proceed directly to analysis. Do not ask again.
+If the user supplied everything (depth + objective + position-&-risk-or-skip, plus debate mode when depth is `full SOP`), or replied with the one-liner, proceed directly to analysis. Do not ask again.
 
 ### Explicit backtest request
 
@@ -86,18 +87,30 @@ When the user states an objective, derive the technical window automatically —
 
 If the user *explicitly* requests a window contrary to the table ("show me intraday for a long-term investment"), honor the explicit request and note the deviation. The table is the default, not a mandate.
 
-### Position Budget Use
+### Position & Risk Profile Use
 
-If the user provides a position budget (dollar amount or % of portfolio), pass it into `modules/risk-position.md` so that section produces concrete numbers:
+Item (3) of the Request Gate has three parts. Pass whatever the user gives into `modules/risk-position.md`:
+
+**Budget** (dollar amount or % of portfolio) — the risk section produces concrete numbers:
 
 - exact share count or notional based on the entry level
 - dollar value at each scenario (bear / base / bull)
-- dollar value at the stop level (max loss in $)
-- dollar value at the take-profit / target (max gain in $)
+- dollar value at the stop level (max loss in $) and at the take-profit / target (max gain in $)
 - R:R ratio with dollar context
-- whether the position exceeds the recommended single-stock cap (default 5% of portfolio; warn if the user's budget implies a higher concentration)
+- whether the position exceeds the recommended single-stock cap (default 5% of portfolio; warn if the budget implies higher concentration)
 
-If the user replied `skip`, the risk section uses % terms only (no dollar figures) and does not produce a sizing recommendation.
+**Current holding + cost basis** — if the user already owns `<TICKER>`:
+
+- frame the final strategy as **hold / add / trim / exit**, not a fresh entry
+- compute unrealized P&L at the current price and at each bear/base/bull scenario, relative to the stated cost basis
+- set the stop and invalidation against both the cost basis and the technical levels (distinguish "protect the gain" from "cap the loss")
+- if the position is underwater, address the sunk-cost framing explicitly — the decision is whether the stock is a buy *today*, not whether it will "come back"
+
+**Risk tolerance** (conservative / balanced / aggressive) — selects the sizing framework directly:
+
+- use that one style's risk-per-trade, single-stock cap, and minimum R:R from the `risk-position.md` table, instead of presenting all three variants
+
+If the user replied `skip` to a part, the risk section falls back to the default for that part: budget skipped → % terms only, no dollar sizing; holding skipped → assume a fresh entry; risk tolerance skipped → present conservative / balanced / aggressive variants.
 
 ### Persona Selection Table
 
@@ -195,7 +208,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
 ## Workflow
 
 1. Resolve the ticker, exchange, company name, sector, industry, and report language.
-2. Confirm depth, objective, position budget, and (for `full SOP`) debate mode via the Request Gate. Derive the technical window from the objective via the Technical Window Defaults table — do not ask the user. Output format is not asked — the report is always HTML.
+2. Confirm depth, objective, position & risk profile (budget, current holding + cost basis, risk tolerance), and (for `full SOP`) debate mode via the Request Gate. Derive the technical window from the objective via the Technical Window Defaults table — do not ask the user. Output format is not asked — the report is always HTML.
 3. Collect source data with dates:
    - price, volume, market cap, beta, 52-week range
    - latest 10-K/10-Q, earnings release, guidance, transcript if available
@@ -280,14 +293,19 @@ Do not output a single unsupported target price. Provide bear/base/bull target r
 
 Use scoring as a `Conviction / Setup Quality Score`, not a mechanical buy/sell rating. Data Health is a gate, not a score; if Data Health fails for the user's objective, do not produce an actionable conclusion for that objective.
 
-| Module | Weight |
-|---|---:|
-| Macro and sector environment | 15 |
-| Company fundamentals | 25 |
-| Valuation | 20 |
-| Technical setup | 20 |
-| Risk and event profile | 15 |
-| Catalyst/news quality | 5 |
+Score each of the six categories 0–100 on its own evidence, then take the weighted average for the final `/100`. **The weights depend on the user's risk tolerance (Request Gate item 3c)** — the same stock is a different-quality setup for a conservative vs. an aggressive investor, so the final score moves with the profile. Use the column matching the stated risk tolerance; if the user skipped it, use `Balanced`.
+
+| Category | Conservative | Balanced | Aggressive |
+|---|---:|---:|---:|
+| Macro and sector environment | 15 | 15 | 15 |
+| Company fundamentals | 30 | 25 | 20 |
+| Valuation (margin of safety) | 25 | 20 | 15 |
+| Technical setup | 10 | 20 | 28 |
+| Risk and event profile | 18 | 15 | 12 |
+| Catalyst / news quality | 2 | 5 | 10 |
+| **Total** | **100** | **100** | **100** |
+
+The category scores (0–100) are identical across profiles — only the weights change. A conservative profile rewards durable fundamentals and a valuation cushion and penalizes thin risk buffers; an aggressive profile rewards technical momentum and catalyst optionality and tolerates a richer valuation; balanced is the neutral default.
 
 | Score | Interpretation |
 |---:|---|
@@ -296,6 +314,8 @@ Use scoring as a `Conviction / Setup Quality Score`, not a mechanical buy/sell r
 | 50-64 | Neutral / wait for better evidence |
 | Below 50 | Avoid or low-priority |
 | Data Health Fail | No actionable conclusion for the affected objective |
+
+Always state which risk-tolerance column was used. When the profile materially changes the verdict, also show the score under the other two profiles so the sensitivity is visible — e.g. `Conviction 78 (Balanced) — 71 Conservative / 84 Aggressive; the spread is the stretched valuation`.
 
 ## Module Contract
 

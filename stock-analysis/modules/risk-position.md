@@ -13,7 +13,7 @@ Convert analysis into risk controls and conditional strategy. This skill does no
 
 ## Standalone Markdown Report Mode
 
-When called directly by a user, produce a self-contained Markdown risk and position plan in the user's language. If ticker, entry/current price, horizon, risk style, or objective is unclear, ask one concise clarification first.
+When called directly by a user, produce a self-contained Markdown risk and position plan in the user's language. If ticker, entry/current price, horizon, risk tolerance, current holding status, or objective is unclear and materially affects the answer, ask one concise clarification first.
 
 Use this structure:
 
@@ -45,8 +45,9 @@ Every standalone report or main-report section must include a conclusion, source
 
 ## Inputs
 
-- Account size if provided; otherwise use percentage-based sizing only.
-- User risk style if provided: conservative, balanced, aggressive.
+- Position budget (account size, or a dollar/% allocation) if provided; otherwise use percentage-based sizing only.
+- Risk tolerance — conservative / balanced / aggressive. Usually supplied by the orchestrator's Request Gate (item 3); if absent, present all three variants.
+- Current holding status and average cost basis, if the user already owns the stock — triggers Held-Position Analysis below.
 - Entry price or current price, stop level, target levels, ATR, support/resistance, and macro regime.
 - Portfolio concentration constraints if provided.
 
@@ -63,6 +64,20 @@ Default risk styles:
 | conservative | 0.5% | 5% | 20% | 2:1 |
 | balanced | 1.0% | 10% | 30% | 2:1 |
 | aggressive | 2.0% | 15% | 40% | 3:1 |
+
+When the user supplied a risk tolerance via the Request Gate, use that one row and do not present the other two as variants.
+
+## Held-Position Analysis
+
+When the user already owns the stock and gave an average cost basis, the recommendation is a **hold / add / trim / exit** decision, not a fresh entry. Produce:
+
+- **Unrealized P&L** — current price vs cost basis, in % and (when budget is known) in dollars; repeat at the bear / base / bull scenario targets so the user sees the gain/loss range, not just the price range.
+- **Decision framing** — is the stock a buy *at today's price*? The cost basis is a sunk cost and must not drive the call. State this explicitly when the position is underwater ("the question is whether `<TICKER>` is worth owning now, not whether it returns to your cost").
+- **Add vs trim** — if the thesis is intact and the position sits below the single-stock cap, define an add level and size; if the position is above the cap or the thesis has weakened, define a trim/exit plan with levels.
+- **Two stop references** — a thesis-invalidation stop (technical) and a capital-preservation stop relative to cost basis; name which one binds first.
+- **Holding-period note** — flag short-term vs long-term holding as a factor for the user to check; do not give tax advice.
+
+If the user holds the stock but skipped the cost basis, run the normal fresh-entry framework and note that P&L-relative guidance was not possible.
 
 ## Volatility-Adjusted Single-Stock Cap
 
@@ -114,11 +129,11 @@ Always state which adjustments were applied and the resulting cap. When data for
 
 Return a Markdown report or report section with:
 
-- risk style assumption
+- the risk tolerance used (or conservative / balanced / aggressive variants if none was supplied)
 - entry/stop/target plan
 - reward/risk ratio
 - position sizing formula or percentage guidance
-- conservative, balanced, and aggressive variants when user style is unknown
+- hold / add / trim / exit guidance and unrealized P&L vs cost basis when the user already owns the stock
 - scale-in and scale-out rules
 - short-term strategy
 - medium-term strategy

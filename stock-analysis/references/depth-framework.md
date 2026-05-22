@@ -1,6 +1,6 @@
 # Stock Analysis Depth Framework
 
-Use this matrix together with the Request Gate in `stock-analysis/SKILL.md`. The Request Gate always asks the combined question (depth / objective / position budget / debate mode) before producing a report — including for a bare ticker — unless the request is already fully specified or is an explicit backtest request. Output format is not asked — every report is a self-contained HTML file. Technical window is derived from the objective, never asked. The debate-mode item is an on/off toggle for persona-based debate (`full SOP` only); Claude still auto-selects *which* personas — the user is never asked to name them.
+Use this matrix together with the Request Gate in `stock-analysis/SKILL.md`. The Request Gate always asks the combined question (depth / objective / position & risk profile / debate mode) before producing a report — including for a bare ticker — unless the request is already fully specified or is an explicit backtest request. Output format is not asked — every report is a self-contained HTML file. Technical window is derived from the objective, never asked. The debate-mode item is an on/off toggle for persona-based debate (`full SOP` only); Claude still auto-selects *which* personas — the user is never asked to name them.
 
 | Depth | Use when | Modules | Debate | Output |
 |---|---|---|---|---|

@@ -183,15 +183,19 @@ A section may be `n/a — <one-line reason>` when it genuinely does not apply (p
 | Bull |  |  |  |  |  |
 
 ## Conviction / Setup Quality Score
-| Module | Weight | Score | Rationale |
+Weights come from the risk-tolerance column of the SKILL.md Scoring Framework — state the profile used.
+
+| Category | Weight (Conservative / Balanced / Aggressive) | Score 0-100 | Rationale |
 |---|---:|---:|---|
-| Macro and sector environment | 15 |  |  |
-| Company fundamentals | 25 |  |  |
-| Valuation | 20 |  |  |
-| Technical setup | 20 |  |  |
-| Risk and event profile | 15 |  |  |
-| Catalyst/news quality | 5 |  |  |
+| Macro and sector environment |  |  |  |
+| Company fundamentals |  |  |  |
+| Valuation (margin of safety) |  |  |  |
+| Technical setup |  |  |  |
+| Risk and event profile |  |  |  |
+| Catalyst / news quality |  |  |  |
 | Total | 100 |  |  |
+
+Risk-tolerance sensitivity: __ Conservative / __ Balanced / __ Aggressive.
 
 ## Event Risk Check
 - Upcoming earnings:
