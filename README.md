@@ -15,7 +15,7 @@
 
 A composable, institutional-grade equity research toolkit built as a suite of Claude Code Skills. Translates a multi-step analyst SOP into Markdown prompt files — with explicit numeric thresholds, real multi-subagent debate, and a panel of named investor personas you can converse with directly.
 
-Works in Claude Code, Claude Desktop, Codex, and (with one extra zip step) Claude.ai web.
+Works in Claude Code, Claude Desktop, Cowork, Codex, and (with one extra zip step) Claude.ai web.
 
 ## What's New (2026-05)
 
@@ -28,7 +28,7 @@ Works in Claude Code, Claude Desktop, Codex, and (with one extra zip step) Claud
 - **8 investor persona skills** — Buffett · Munger · Graham · Lynch · Fisher · Wood · Druckenmiller · Burry. Invoke any one to converse in that investor's voice, or substitute them into the debate panel.
 - **Real multi-subagent debate** — `modules/debate-panel.md` dispatches one parallel `Agent` tool call per role per round in Claude Code. Round count defaults to 2 for full SOP; the persona roster is auto-selected from the ticker profile. Falls back to single-LLM simulation only when the Agent tool isn't available, and labels the transcript as such.
 - **`stock-sentiment-analysis`** added — 4-channel sentiment skill covering insider transactions (20%), news flow (25%), analyst EPS revisions (35%), and short interest / options positioning (20%).
-- **Quantitative layer** added to financials, technical, valuation, and risk skills — explicit numeric thresholds (ROE > 15%, P/B < 1.5, FCF yield ≥ 15%, ADX, Z-score, Owner Earnings, vol-adjusted position cap, etc.) sit on top of the existing qualitative framework rather than replacing it.
+- **Quantitative layer** added to the financials, technical, valuation, and risk modules — explicit numeric thresholds (ROE > 15%, P/B < 1.5, FCF yield ≥ 15%, ADX, Z-score, Owner Earnings, vol-adjusted position cap, etc.) sit on top of the existing qualitative framework rather than replacing it.
 
 ## Module Map
 
@@ -73,7 +73,7 @@ Each persona has explicit Conflict And Pass Rules — a Buffett persona refusing
 | Data-failure handling | Built-in Data Health gates and degradation rules | Crashes on missing fields |
 | Qualitative + quantitative | Both layered (qualitative is authoritative; quantitative is a filter) | Quantitative-only |
 | Persona-based debate | Yes — Claude Code Agent tool dispatches each persona as an independent subagent | Yes — LangGraph nodes |
-| Backtesting | **v1 single-ticker (indicator / signal / persona) — `stock-backtest` skill** | Yes (multi-stock + walk-forward) |
+| Backtesting | **v1 single-ticker (indicator / signal / persona) — `modules/backtest.md`** | Yes (multi-stock + walk-forward) |
 | Setup cost | `git clone` + copy folders | `pip install` + LLM API key + data API key |
 | Final output | Professional self-contained HTML report | JSON signals + reasoning |
 
@@ -110,7 +110,7 @@ Build one ZIP:
 .\tools\build_claude_zips.ps1
 ```
 
-Then upload `claude_web_zips/stock-analysis.zip` via the Skills UI. Detailed cross-platform notes in `docs/CROSS_PLATFORM.md`.
+Then go to **Customize → Skills → + → Upload a skill** and upload `claude_web_zips/stock-analysis.zip`. Upload the `.zip` **file** itself (compressed-folder icon) — not the unzipped `stock-analysis` folder, which the uploader rejects with a *"must have a .skill, .zip, or .md extension"* error. A `.skill` file (a renamed ZIP of the same skill folder) works too. Detailed cross-platform notes in `docs/CROSS_PLATFORM.md`.
 
 ## API Keys (optional)
 
@@ -220,4 +220,34 @@ stock-analyze-skills/
 │   │   ├── valuation.md
 │   │   ├── technical.md
 │   │   ├── sentiment.md
-│   │   ├
+│   │   ├── risk-position.md
+│   │   ├── debate-panel.md
+│   │   ├── backtest.md
+│   │   └── investors/
+│   │       ├── buffett.md       munger.md       graham.md       lynch.md
+│   │       └── fisher.md        wood.md         druckenmiller.md burry.md
+│   ├── references/
+│   │   ├── depth-framework.md
+│   │   ├── report-template.md            # content schema + Section Length Budget
+│   │   ├── report-template.html          # HTML structure + styling
+│   │   ├── institutional-company-analysis-bilingual.md
+│   │   ├── persona-skill-template.md
+│   │   ├── strategy-registry.md
+│   │   ├── persona-criteria-v1.md
+│   │   ├── persona-criteria-v1.yaml
+│   │   └── overfitting-checklist.md
+│   └── scripts/
+│       ├── data_provider.py
+│       ├── fetch_price_charts.py
+│       ├── backtest.py
+│       └── web_prefetch_helper.md
+├── docs/                                 # cross-platform notes
+├── tools/                                # zip builder for Claude.ai web (single ZIP)
+├── MIGRATION_PLAN.md                     # the 18→1 consolidation design
+├── BACKTEST_DESIGN.md                    # backtest v1 design
+└── README.md / README.zh-CN.md
+```
+
+## Disclaimer
+
+These skills produce research output, not investment advice. Every report this suite generates ends with `Not investment advice -- for your own research.` — that line is non-negotiable.

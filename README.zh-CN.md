@@ -15,7 +15,7 @@
 
 一套机构级股票研究的可组合 Skill 工具集,把多步分析师 SOP 翻译成 Markdown 提示词文件 — 含显式数值阈值、真实多 subagent 辩论、以及 8 位可直接对话的投资大师人格。
 
-支持 Claude Code、Claude Desktop、Codex,以及 Claude.ai 网页端 (需要额外打包 zip)。
+支持 Claude Code、Claude Desktop、Cowork、Codex,以及 Claude.ai 网页端 (需要额外打包 zip)。
 
 ## 最近更新 (2026-05)
 
@@ -28,7 +28,7 @@
 - **8 个投资大师人格 skill** — Buffett · Munger · Graham · Lynch · Fisher · Wood · Druckenmiller · Burry。可单独激活,以该大师视角对话;也可在辩论环节中替换通用 Bull / Bear 角色。
 - **真实多 subagent 辩论** — `modules/debate-panel.md` 在 Claude Code 中会**真正**派遣并行 `Agent` 工具调用,每个角色每轮一个独立 subagent。full SOP 默认 2 轮;参与人格由 Claude 按个股画像自动选取。仅在 Agent tool 不可用时降级为单 LLM 顺序模式,且必须在 transcript 头部明确标注。
 - **新增 `stock-sentiment-analysis`** — 4 通道情绪分析: insider 交易 (20%) + news flow (25%) + 分析师 EPS revision (35%) + short interest / 期权定位 (20%)。
-- **量化层加在财报 / 技术 / 估值 / 风险 4 个 skill** — 显式数值阈值 (ROE > 15%、P/B < 1.5、FCF yield ≥ 15%、ADX、Z-score、Owner Earnings、波动率调整仓位上限等) **叠加在**已有的定性框架之上,不替换。
+- **量化层加在财报 / 技术 / 估值 / 风险 4 个 module** — 显式数值阈值 (ROE > 15%、P/B < 1.5、FCF yield ≥ 15%、ADX、Z-score、Owner Earnings、波动率调整仓位上限等) **叠加在**已有的定性框架之上,不替换。
 
 ## Module 列表
 
@@ -73,7 +73,7 @@
 | 数据缺失处理 | 内置 Data Health 门禁与降级规则 | 字段缺失会崩 |
 | 定性 + 定量 | 双轨叠加 (定性权威, 定量做过滤) | 仅定量 |
 | 人格驱动辩论 | 是 — Claude Code 原生 Agent tool 派每个 persona 为独立 subagent | 是 — LangGraph nodes |
-| 回测 | **v1 单股 (指标 / 信号 / 大师) — `stock-backtest` skill** | 有 (多股 + walk-forward) |
+| 回测 | **v1 单股 (指标 / 信号 / 大师) — `modules/backtest.md`** | 有 (多股 + walk-forward) |
 | 接入成本 | `git clone` + 拷贝目录 | `pip install` + LLM API key + 数据 API key |
 | 输出形式 | 专业级单文件 HTML 报告 | JSON 信号 + reasoning |
 
@@ -110,7 +110,7 @@ Copy-Item .\stock-analysis "$env:USERPROFILE\.codex\skills\" -Recurse -Force
 .\tools\build_claude_zips.ps1
 ```
 
-然后上传 `claude_web_zips/stock-analysis.zip`。详细跨平台说明见 `docs/CROSS_PLATFORM.md`。
+然后进入 **Customize → Skills → + → Upload a skill**,上传 `claude_web_zips/stock-analysis.zip`。注意上传的是那个 `.zip` **文件本身**(压缩包图标)—— 不是解压后的 `stock-analysis` 文件夹,拖文件夹会被报错 *"must have a .skill, .zip, or .md extension"*。`.skill` 文件(就是同一个 skill 文件夹打包后改的扩展名)也能传。详细跨平台说明见 `docs/CROSS_PLATFORM.md`。
 
 ## API Key (可选)
 
@@ -224,4 +224,30 @@ stock-analyze-skills/
 │   │   ├── debate-panel.md
 │   │   ├── backtest.md
 │   │   └── investors/
-│   │       ├
+│   │       ├── buffett.md       munger.md       graham.md       lynch.md
+│   │       └── fisher.md        wood.md         druckenmiller.md burry.md
+│   ├── references/
+│   │   ├── depth-framework.md
+│   │   ├── report-template.md            # 内容 schema + Section Length Budget
+│   │   ├── report-template.html          # HTML 结构 + 样式
+│   │   ├── institutional-company-analysis-bilingual.md
+│   │   ├── persona-skill-template.md
+│   │   ├── strategy-registry.md
+│   │   ├── persona-criteria-v1.md
+│   │   ├── persona-criteria-v1.yaml
+│   │   └── overfitting-checklist.md
+│   └── scripts/
+│       ├── data_provider.py
+│       ├── fetch_price_charts.py
+│       ├── backtest.py
+│       └── web_prefetch_helper.md
+├── docs/                                 # 跨平台说明
+├── tools/                                # Claude.ai 网页端 zip 打包工具 (单 ZIP)
+├── MIGRATION_PLAN.md                     # 18→1 合并设计文档
+├── BACKTEST_DESIGN.md                    # backtest v1 设计文档
+└── README.md / README.zh-CN.md
+```
+
+## 免责声明
+
+本 skill 包产出研究分析,**不构成投资建议**。每份报告末尾都强制包含 `Not investment advice -- for your own research.`,这一行不可省略。
