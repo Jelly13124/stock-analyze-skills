@@ -46,7 +46,7 @@ Every standalone report or main-report section must include a conclusion, source
 ## Inputs
 
 - Position budget (account size, or a dollar/% allocation) if provided; otherwise use percentage-based sizing only.
-- Risk tolerance — conservative / balanced / aggressive. Usually supplied by the orchestrator's Request Gate (item 3); if absent, present all three variants.
+- Risk tolerance — the paper drawdown the user can sit through on this position (conservative ≈ ≤10%, balanced ≈ 10-20%, aggressive ≈ 25%+, or a specific number). Usually supplied by the orchestrator's Request Gate (item 3); if absent, present all three variants.
 - Current holding status and average cost basis, if the user already owns the stock — triggers Held-Position Analysis below.
 - Entry price or current price, stop level, target levels, ATR, support/resistance, and macro regime.
 - Portfolio concentration constraints if provided.
@@ -59,13 +59,15 @@ Use the SOP formula when account size and stop are known:
 
 Default risk styles:
 
-| Style | Risk per trade | Single-stock cap | Sector cap | Min reward/risk |
-|---|---:|---:|---:|---:|
-| conservative | 0.5% | 5% | 20% | 2:1 |
-| balanced | 1.0% | 10% | 30% | 2:1 |
-| aggressive | 2.0% | 15% | 40% | 3:1 |
+| Style | Tolerable position drawdown | Risk per trade | Single-stock cap | Sector cap | Min reward/risk |
+|---|---:|---:|---:|---:|---:|
+| conservative | up to ~10% | 0.5% | 5% | 20% | 2:1 |
+| balanced | ~10-20% | 1.0% | 10% | 30% | 2:1 |
+| aggressive | ~25-40% | 2.0% | 15% | 40% | 3:1 |
 
-When the user supplied a risk tolerance via the Request Gate, use that one row and do not present the other two as variants.
+The Request Gate captures risk tolerance as the **paper drawdown the user can sit through on this position**. When it is supplied, use that one row and do not present the other two as variants. If the user gave a specific number (e.g. "15%"), use that number directly for the stop logic and map it to the nearest style for the caps (≤10% → conservative, 10-20% → balanced, >20% → aggressive).
+
+**Tolerable drawdown drives the stop.** Place the stop within the user's tolerable-drawdown band. If the volatility-correct stop (2×ATR, or below structural support) is *wider* than that band, the position is too volatile for this risk tolerance at full size — either size down so the dollar loss at the wider stop stays acceptable, or flag the name as unsuitable for this profile. State which applies, and check the stock's annualized volatility (see Volatility-Adjusted Single-Stock Cap below) against the band — a name that routinely swings more than the band will stop the user out on noise.
 
 ## Held-Position Analysis
 

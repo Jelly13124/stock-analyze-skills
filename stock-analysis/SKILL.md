@@ -48,9 +48,9 @@ A bare ticker (`NVDA`, `分析一下 DPZ`, `NVDA 怎么样`) specifies none of t
 `Before I analyze <TICKER> (<one-line company identification, e.g. "Domino's Pizza">), please confirm:
 (1) Depth — basic (quick snapshot) / standard (full analyst report) / full SOP (institutional-grade: debate, scoring, scenarios, backtest validation);
 (2) Objective — target price / short-term trade / medium-term strategy / long-term investment / earnings review;
-(3) Position & risk — (a) budget: a dollar amount or % of portfolio; (b) do you already hold <TICKER>, and if so your average cost basis; (c) risk tolerance: conservative / balanced / aggressive. Reply "skip" to any part you'd rather not give;
+(3) Position & risk — (a) budget: a dollar amount or % of portfolio; (b) do you already hold <TICKER>, and if so your average cost basis; (c) risk tolerance — how big a paper drawdown on this position can you sit through? conservative (≈ up to 10%) / balanced (≈ 10-20%) / aggressive (≈ 25%+), or give your own number. Reply "skip" to any part you'd rather not give;
 (4) Debate mode (full SOP only) — should the multi-agent debate use investor-persona agents (Buffett / Wood / Burry etc. — I auto-select the matchup) or generic Bull / Bear / Quant / Risk roles? Default is persona agents.
-You can also reply with a one-liner like "standard, target price, $10k, already hold at $9.50, balanced risk" and I'll start straight away. The report is always delivered as an HTML file — format is not asked.`
+You can also reply with a one-liner like "standard, target price, $10k, hold at $9.50, OK with a ~15% drawdown" and I'll start straight away. The report is always delivered as an HTML file — format is not asked.`
 
 Notes:
 - Always identify the company by name in the question so the user knows the ticker resolved correctly (the screenshot failure mode: user typing `DPZ` and not being sure Claude knows it's Domino's Pizza).
@@ -106,9 +106,11 @@ Item (3) of the Request Gate has three parts. Pass whatever the user gives into 
 - set the stop and invalidation against both the cost basis and the technical levels (distinguish "protect the gain" from "cap the loss")
 - if the position is underwater, address the sunk-cost framing explicitly — the decision is whether the stock is a buy *today*, not whether it will "come back"
 
-**Risk tolerance** (conservative / balanced / aggressive) — selects the sizing framework directly:
+**Risk tolerance** — captured as the paper drawdown the user can sit through on this position (conservative ≈ ≤10%, balanced ≈ 10-20%, aggressive ≈ 25%+, or a custom number):
 
-- use that one style's risk-per-trade, single-stock cap, and minimum R:R from the `risk-position.md` table, instead of presenting all three variants
+- map the band/number to a style row in `risk-position.md` and use that one style's risk-per-trade, single-stock cap, and minimum R:R — do not present all three variants
+- feed the tolerable-drawdown number into the stop logic: the stop should sit within that band; if the volatility-correct stop is wider, size down or flag the name as too volatile for this tolerance
+- for the final score, the band maps to a Scoring Framework weight column (≤10% → Conservative, 10-20% → Balanced, >20% → Aggressive)
 
 If the user replied `skip` to a part, the risk section falls back to the default for that part: budget skipped → % terms only, no dollar sizing; holding skipped → assume a fresh entry; risk tolerance skipped → present conservative / balanced / aggressive variants.
 
@@ -293,7 +295,7 @@ Do not output a single unsupported target price. Provide bear/base/bull target r
 
 Use scoring as a `Conviction / Setup Quality Score`, not a mechanical buy/sell rating. Data Health is a gate, not a score; if Data Health fails for the user's objective, do not produce an actionable conclusion for that objective.
 
-Score each of the six categories 0–100 on its own evidence, then take the weighted average for the final `/100`. **The weights depend on the user's risk tolerance (Request Gate item 3c)** — the same stock is a different-quality setup for a conservative vs. an aggressive investor, so the final score moves with the profile. Use the column matching the stated risk tolerance; if the user skipped it, use `Balanced`.
+Score each of the six categories 0–100 on its own evidence, then take the weighted average for the final `/100`. **The weights depend on the user's risk tolerance (Request Gate item 3c)** — the same stock is a different-quality setup for a conservative vs. an aggressive investor, so the final score moves with the profile. Use the column matching the stated risk tolerance — if the user gave a tolerable-drawdown number rather than a label, map it (≤10% → Conservative, 10-20% → Balanced, >20% → Aggressive). If risk tolerance was skipped entirely, use `Balanced`.
 
 | Category | Conservative | Balanced | Aggressive |
 |---|---:|---:|---:|
