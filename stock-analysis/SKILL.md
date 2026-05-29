@@ -167,6 +167,7 @@ Use `references/report-template.html` as the structural and styling reference, a
 - Include a `@media print` stylesheet so the HTML prints to PDF cleanly via the browser
 - Save the final `.html` to the user's workspace folder and share a `computer://` link
 - For Cowork users: in addition to saving the file, render it as an artifact via the artifact tool so the report is live inside the chat
+- **Assembly strategy — mandatory for `full SOP`, recommended at all depths**: build the file incrementally via `Write` + repeated `Edit` calls, one major section at a time. Do NOT buffer the full 5–8k-word report inside a single response — under extended thinking at high/max effort, the thinking + drafted output overflows the model's budget and the response comes back empty. Each tool call is a fresh generation pass with its own budget, so 10+ small writes always succeed where one giant response silently fails. See Workflow step 12.
 
 ## Module Routing
 
@@ -243,7 +244,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
 9. For `full SOP`, the company-fundamentals section must follow `references/institutional-company-analysis-bilingual.md` and include investment question, business/segment map, unit economics, industry structure, competitive position, catalysts, management/capital allocation, financial translation, thesis breakers, and evidence gaps.
 10. For explicit backtest requests (not the auto signal-validation in step 6), Read `modules/backtest.md` and run `scripts/backtest.py` with whichever mode the user picked. The backtest module enforces in-sample / out-of-sample reporting, transaction-cost honesty, and overfit checks — do not skip those.
 11. Build an evidence ledger: bullish facts, bearish facts, uncertain/missing data, catalysts, invalidation points.
-12. Produce the report as a single self-contained HTML file, using `references/report-template.html` for structure + styling and `references/report-template.md` for the content schema and the Section Length Budget. Save it to the user's workspace folder and share a `computer://` link.
+12. **Build the HTML report incrementally — never assemble the full report inside a single response.** Use `Write` to create the file with the basic HTML structure + CSS borrowed from `references/report-template.html`. Then use `Edit` (or repeated `Write` calls) to populate **one major section at a time**, in the schema order from `references/report-template.md`. This pattern is **mandatory for `full SOP`**: emitting 5–8k words of HTML in a single response overflows extended-thinking / output budgets (especially at high or max effort) and the request will fail silently — long thinking spin followed by an empty or errored response. The same constraint applies even at lower effort: prefer 10+ small `Write` / `Edit` calls over one huge response. Save the final `.html` to the user's workspace folder and share a `computer://` link at the end.
 
 ## Adaptive Module Selection
 
@@ -337,7 +338,7 @@ Modules are loaded on demand by the orchestrator and can also be invoked directl
 Length is governed by the **Section Length Budget** table in `references/report-template.md` — per-section word ranges with both a floor (so each section is genuinely detailed) and a ceiling (so it doesn't run away). Read that table before writing a `full SOP` or `standard` report. Two principles sit on top of the budget:
 
 - **Company Fundamentals and Financial Statement Review are the priority sections.** They carry the largest word budget and must be the most detailed in the report — this is where the analytical work shows. Never compress them to hit an overall length target; compress lower-priority sections instead.
-- **Within a section's range, length still scales with evidence weight.** Always reach at least the floor. If a section is genuinely clear-cut, land in the lower half of its range and say so explicitly ("Macro context is unambiguous risk-on; no further analysis warranted") so the reader doesn't assume Claude was lazy. Exceeding the ceiling means you are padding — a failure mode, not thoroughness.
+- **Within a section's range, length still scales with evidence weight.** Always reach at least the floor. If a section is genuinely clear-cut, land in the lower half of its range and say so explicitly ("Macro context is unambiguous risk-on; no further analysis warranted") so the reader doesn't assume Claude was lazy. The upper end of each band is a guideline, **not a hard cap** — exceeding it is fine when evidence justifies the extra depth, but exceeding it with filler is still padding.
 
 For `basic`, compact bullets are usually right; apply the budget's `basic` global target.
 

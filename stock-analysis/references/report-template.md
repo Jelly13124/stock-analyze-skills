@@ -28,7 +28,7 @@ The report is always a single self-contained HTML file. Use `report-template.htm
 
 ## Section Length Budget
 
-Per-section word targets for the report body (prose only — tables, the HTML chrome, and chart images do not count). Each range has a **floor** (write at least this much; below it the section is too thin) and a **ceiling** (above it you are padding). **Company Fundamentals and Financial Statement Review carry the heaviest budget by design — they are the priority sections and must be the most detailed.**
+Per-section word **targets** for the report body (prose only — tables, the HTML chrome, and chart images do not count). The ranges below are **guidelines, not hard caps**: each has a floor (write at least this much; below it the section is too thin) and an upper guideline (a comfortable depth, not a wall). The previous hard ceiling has been removed — now that the report is built incrementally via `Write` + `Edit` (see SKILL.md Workflow step 12), there is **no technical cap on total length**. **Company Fundamentals and Financial Statement Review carry the heaviest budget by design — they are the priority sections and must be the most detailed.** Going past a band when evidence warrants is fine; going past it with filler is still padding.
 
 ### full SOP
 
@@ -50,7 +50,7 @@ Per-section word targets for the report body (prose only — tables, the HTML ch
 | Final Conditional Strategy | 280–450 | |
 | Missing Data / Low Confidence | table + ≤ 120 | |
 
-**full SOP body total: target ≈ 5,000–7,800 words; hard ceiling ≈ 8,500.** If you are over the ceiling, you are padding — tighten lower-priority sections, never the two priority sections.
+**full SOP body total: target ≈ 5,000–7,800 words for a typical full-evidence report; no hard ceiling.** Going well past 8,000 is fine when evidence genuinely supports it (deep-dive on a complex business, contested thesis, dense debate). Going well past 8,000 *without* matching evidence is padding — tighten lower-priority sections, never the two priority sections.
 
 ### standard and basic
 

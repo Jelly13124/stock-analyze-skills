@@ -81,6 +81,16 @@ The two projects solve different problems. ai-hedge-fund is a programmable hedge
 
 ## Quick Install
 
+### One-line install (npx, Claude Code)
+
+```bash
+npx skills add Jelly13124/stock-analyze-skills/stock-analysis
+```
+
+Installs straight into `~/.claude/skills/stock-analysis/`. Restart Claude Code after. Skip the steps below unless you also want Codex / Desktop / Web, or want to read / edit the source.
+
+### Manual install — clone first
+
 ```powershell
 git clone https://github.com/Jelly13124/stock-analyze-skills.git
 cd stock-analyze-skills
@@ -104,13 +114,13 @@ Import the single `stock-analysis` folder in the Skills page. All 18 modules shi
 
 ### Claude.ai Web
 
-Build one ZIP:
+Download the latest release and upload it — no build step needed:
 
-```powershell
-.\tools\build_claude_zips.ps1
-```
+**[Download `stock-analysis.skill` (latest release)](https://github.com/Jelly13124/stock-analyze-skills/releases/latest/download/stock-analysis.skill)**
 
-Then go to **Customize → Skills → + → Upload a skill** and upload `claude_web_zips/stock-analysis.zip`. Upload the `.zip` **file** itself (compressed-folder icon) — not the unzipped `stock-analysis` folder, which the uploader rejects with a *"must have a .skill, .zip, or .md extension"* error. A `.skill` file (a renamed ZIP of the same skill folder) works too. Detailed cross-platform notes in `docs/CROSS_PLATFORM.md`.
+Then go to **Customize → Skills → + → Upload a skill** and drop the file in.
+
+Prefer to build your own? Run `.\tools\build_claude_zips.ps1` → upload `claude_web_zips/stock-analysis.zip`. Upload the `.zip` **file** itself (compressed-folder icon) — not the unzipped folder, which the uploader rejects with *"must have a .skill, .zip, or .md extension"*. Detailed cross-platform notes in `docs/CROSS_PLATFORM.md`.
 
 ## API Keys (optional)
 

@@ -41,6 +41,12 @@ README.md / README.zh-CN.md
   question. DOCX and Markdown-as-a-report were removed. Build HTML from
   `references/report-template.html` (structure + style) and `references/report-template.md`
   (content schema + Section Length Budget).
+- **Build the HTML incrementally** via `Write` + repeated `Edit` calls — one major
+  section at a time. NEVER assemble the entire 5–8k-word report in a single response.
+  Under extended thinking at high/max effort, a single-response assembly overflows the
+  thinking/output budget and the request fails silently (long spin, empty response).
+  Each tool call has its own budget, so 10+ small writes succeed where one giant
+  response fails.
 - **Request Gate** asks one combined question for a bare ticker: (1) depth, (2) objective,
   (3) position & risk profile — budget / current holding + cost basis / risk tolerance,
   (4) debate mode (full SOP only). Output format and the technical window are NEVER asked.
@@ -72,6 +78,12 @@ Keep `README.md` and `README.zh-CN.md` in sync with each other.
   `claude_web_zips/stock-analysis.zip`. The ZIP must contain the `stock-analysis/` folder
   with **forward-slash** paths — backslash paths are rejected by the claude.ai uploader.
   A `.skill` file is just that ZIP renamed.
+- **Distribute via GitHub Releases**, not git: when cutting a new version, build the
+  `.skill` locally, then on GitHub create a new release (tag `vX.Y.Z`), upload
+  `stock-analysis.skill` as a release asset. The README's web-install link
+  (`/releases/latest/download/stock-analysis.skill`) auto-points at the newest one.
+  Never commit the `.skill` file to git — it goes stale the moment any skill file
+  changes, and binary blobs bloat history.
 - **Syntax-check scripts**: `python -m py_compile stock-analysis/scripts/*.py`.
 - **Smoke-test data** (works with no key):
   `python stock-analysis/scripts/fetch_price_charts.py NFLX --output-dir ./outputs/NFLX_test --benchmark SPY --sector XLC`.

@@ -81,6 +81,16 @@
 
 ## 快速安装
 
+### 一键装(npx,Claude Code)
+
+```bash
+npx skills add Jelly13124/stock-analyze-skills/stock-analysis
+```
+
+直接拷到 `~/.claude/skills/stock-analysis/`,装完重启 Claude Code 就能用。下面那些步骤可以跳过 —— 除非你还想装 Codex / Desktop / Web,或者想读 / 改源码。
+
+### 手动安装 —— 先 clone
+
 ```powershell
 git clone https://github.com/Jelly13124/stock-analyze-skills.git
 cd stock-analyze-skills
@@ -104,13 +114,13 @@ Copy-Item .\stock-analysis "$env:USERPROFILE\.codex\skills\" -Recurse -Force
 
 ### Claude.ai 网页端
 
-打一个 zip:
+下载最新 release 直接传,不用自己打包:
 
-```powershell
-.\tools\build_claude_zips.ps1
-```
+**[下载 `stock-analysis.skill`(最新 release)](https://github.com/Jelly13124/stock-analyze-skills/releases/latest/download/stock-analysis.skill)**
 
-然后进入 **Customize → Skills → + → Upload a skill**,上传 `claude_web_zips/stock-analysis.zip`。注意上传的是那个 `.zip` **文件本身**(压缩包图标)—— 不是解压后的 `stock-analysis` 文件夹,拖文件夹会被报错 *"must have a .skill, .zip, or .md extension"*。`.skill` 文件(就是同一个 skill 文件夹打包后改的扩展名)也能传。详细跨平台说明见 `docs/CROSS_PLATFORM.md`。
+然后进 **Customize → Skills → + → Upload a skill**,把文件拖进去。
+
+想自己打包?跑 `.\tools\build_claude_zips.ps1` → 上传 `claude_web_zips/stock-analysis.zip`。注意上传的是那个 `.zip` **文件本身**(压缩包图标)—— 不是解压后的文件夹,拖文件夹会被报错 *"must have a .skill, .zip, or .md extension"*。详细跨平台说明见 `docs/CROSS_PLATFORM.md`。
 
 ## API Key (可选)
 
