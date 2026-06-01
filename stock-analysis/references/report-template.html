@@ -228,16 +228,28 @@ content and save as {TICKER}_report.html alongside the chart PNGs.
 </table>
 
 <h2>Executive Summary</h2>
+<p><strong>Headline Verdict ({{RISK_PROFILE}}):</strong> <span class="verdict-badge">{{VERDICT}}</span> · <strong>Composite Score</strong> <span class="score-badge">{{SCORE}}/100</span></p>
+<p><strong>Rationale:</strong> {{RATIONALE}}</p>
 <ul>
-  <li><strong>Overall view:</strong> </li>
   <li><strong>Main bullish argument:</strong> <span class="bull"></span></li>
   <li><strong>Main bearish risk:</strong> <span class="bear"></span></li>
   <li><strong>Bear / base / bull target range:</strong> </li>
   <li><strong>Strategy type:</strong> </li>
   <li><strong>Confidence:</strong> </li>
   <li><strong>Key invalidation:</strong> </li>
-  <li><strong>Score:</strong> <span class="score-badge">{{SCORE}}/100</span></li>
 </ul>
+
+<h2>Recent Catalysts (last 90 days)</h2>
+<p>Spotlight of the 3–7 most material catalysts in the window. Forward-looking events live in <strong>Event Risk Check</strong> below, not here.</p>
+<table>
+  <thead>
+    <tr><th>Date</th><th>Catalyst</th><th>Direction</th><th>Materiality</th><th>Thesis Impact</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>YYYY-MM-DD</td><td></td><td class="bull">Bull / Bear / Neutral</td><td>High / Med / Low</td><td></td></tr>
+  </tbody>
+</table>
+<p><strong>Commentary:</strong> </p>
 
 <details>
   <summary>Evidence Ledger ({{N_ITEMS}} items)</summary>

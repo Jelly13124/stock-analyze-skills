@@ -14,6 +14,7 @@ Before finalizing a `full SOP` report, verify:
 
 - Data Health table covers quote, daily chart, weekly chart, requested intraday chart, financials/filings, macro, sector/peer, and news/transcript.
 - Evidence Ledger has at least 10 items. If evidence is missing, include missing items as low-confidence or unavailable evidence.
+- Recent Catalysts table covers the last 90 days (30 for `short-term trade`, 180 for `long-term`) with the 3–7 most material items, each dated and rated (Bull/Bear/Neutral, materiality High/Med/Low). Mark `n/a — no material catalysts` only when genuinely none exist.
 - Valuation includes bear/base/bull assumptions, target ranges, sensitivity, share-count logic, net cash/debt when available, and margin of safety.
 - Technical analysis includes weekly, daily, and requested intraday tables, chart paths, support/resistance, breakout/invalidation, ATR risk band, and reward/risk.
 - Risk plan includes conservative, balanced, and aggressive frameworks when account size or risk style is unknown.
@@ -36,6 +37,7 @@ Per-section word **targets** for the report body (prose only — tables, the HTM
 |---|---:|---|
 | Executive Summary | 200–350 | decision-first, no padding |
 | Evidence Ledger | table only | ≥ 10 rows, no prose |
+| **Recent Catalysts (last 90 days)** | 150–300 + table | 3–7 most material items via web search; spotlight, not exhaustive |
 | Macro Regime | 250–400 | |
 | Sector and Peer Comparison | 280–450 | |
 | **Company Fundamentals** | **700–1100** | **deepest section** — business/segment map, unit economics, moat, management, capital allocation, thesis breakers |
@@ -88,14 +90,26 @@ A section may be `n/a — <one-line reason>` when it genuinely does not apply (p
 | News / catalysts |  |  |  |  |
 
 ## Executive Summary
-- Overall view:
+- **Headline Verdict ({risk profile}):** {BUY / SMALL BUY / HOLD / SELL} · Composite Score {N}/100
+- **Rationale:** {one-line, names the binding constraint, ≤30 words}
 - Main bullish argument:
 - Main bearish risk:
 - Bear/base/bull target range:
 - Strategy type:
 - Confidence:
 - Key invalidation:
-- Score:
+
+## Recent Catalysts (last 90 days)
+
+Spotlight of the 3–7 most material catalysts in the relevant window (default 90 days; 30 for `short-term trade`, 180 for `long-term`). Forward-looking events belong in **Event Risk Check** below, not here.
+
+| Date | Catalyst | Direction | Materiality | Thesis Impact |
+|---|---|---|---|---|
+| YYYY-MM-DD | <one-line headline + source> | Bull / Bear / Neutral | High / Med / Low | <one line: how this changes the thesis> |
+
+**Commentary** (≤200 words): cluster of related items, biggest single mover, what's still pending (announced but unproven), how this lines up with the bull / bear case.
+
+If no material catalysts in the relevant window: `n/a — no material catalysts in the last 90 days; thesis rests on structural factors (see Company Fundamentals).`
 
 ## Evidence Ledger
 | Claim | Evidence | Source | Date | Direction | Confidence |

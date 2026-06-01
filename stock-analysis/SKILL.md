@@ -219,6 +219,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
    - macro indicators: rates, yield curve, VIX, SPY/QQQ trend, credit/risk appetite
    - sector ETF and peer comparison
    - technical history sufficient for SMA/EMA, RSI, KDJ, MACD, Bollinger Bands, ATR, support/resistance
+   - **recent news catalysts (last 90 days)** — use web search to find earnings results, guidance updates, analyst upgrades/downgrades, M&A, product launches, regulatory events, management changes, partnership news. For each candidate item, capture: date, source (with link), one-line headline, direction (Bull / Bear / Neutral), and materiality (High / Med / Low). **Apply the recency gate**: only use items with a verifiable publish date inside the last 90 days (30 days for `short-term trade`, 180 for `long-term investment`). Aim for **3–7 most material items** — do not list every PR. These feed both the dedicated *Recent Catalysts* section in the report and the *Catalyst / news quality* category in the Scoring Framework.
 4. Fetch API-based daily, weekly, and requested intraday charts:
    - Use the bundled data script: `scripts/fetch_price_charts.py <TICKER> --key-file <workspace-key-file> --output-dir <workspace>/outputs --benchmark SPY --sector <sector-etf>`.
    - In Claude.ai web, use `--output-dir auto` so the script writes to a platform-appropriate output directory.
@@ -294,7 +295,7 @@ Do not output a single unsupported target price. Provide bear/base/bull target r
 
 ## Scoring Framework
 
-Use scoring as a `Conviction / Setup Quality Score`, not a mechanical buy/sell rating. Data Health is a gate, not a score; if Data Health fails for the user's objective, do not produce an actionable conclusion for that objective.
+Use scoring as a `Conviction / Setup Quality Score` — a measure of setup quality, not a price forecast. The score then translates to a 4-band **Headline Verdict** (BUY / SMALL BUY / HOLD / SELL) at the top of the Executive Summary — see the Headline Verdict section below. The verdict is calibrated to the user's risk tolerance and holding status, never mechanical. Data Health is a gate, not a score; if Data Health fails for the user's objective, do not produce an actionable conclusion for that objective.
 
 Score each of the six categories 0–100 on its own evidence, then take the weighted average for the final `/100`. **The weights depend on the user's risk tolerance (Request Gate item 3c)** — the same stock is a different-quality setup for a conservative vs. an aggressive investor, so the final score moves with the profile. Use the column matching the stated risk tolerance — if the user gave a tolerable-drawdown number rather than a label, map it (≤10% → Conservative, 10-20% → Balanced, >20% → Aggressive). If risk tolerance was skipped entirely, use `Balanced`.
 
@@ -310,15 +311,54 @@ Score each of the six categories 0–100 on its own evidence, then take the weig
 
 The category scores (0–100) are identical across profiles — only the weights change. A conservative profile rewards durable fundamentals and a valuation cushion and penalizes thin risk buffers; an aggressive profile rewards technical momentum and catalyst optionality and tolerates a richer valuation; balanced is the neutral default.
 
-| Score | Interpretation |
-|---:|---|
-| 80-100 | High-conviction candidate, still conditional on risk controls |
-| 65-79 | Watchlist or conditional setup |
-| 50-64 | Neutral / wait for better evidence |
-| Below 50 | Avoid or low-priority |
-| Data Health Fail | No actionable conclusion for the affected objective |
+| Score | Interpretation | Headline Verdict |
+|---:|---|---|
+| 75-100 | High-conviction setup | **BUY** |
+| 65-74 | Decent setup, conditional — partial position only | **SMALL BUY** |
+| 50-64 | Neutral / wait for better evidence | **HOLD** |
+| Below 50 | Thesis weak or risk/reward unfavorable | **SELL** |
+| Data Health Fail | No actionable conclusion for the affected objective | INSUFFICIENT DATA |
 
 Always state which risk-tolerance column was used. When the profile materially changes the verdict, also show the score under the other two profiles so the sensitivity is visible — e.g. `Conviction 78 (Balanced) — 71 Conservative / 84 Aggressive; the spread is the stretched valuation`.
+
+## Headline Verdict
+
+After computing the composite score, lead the Executive Summary with **one verdict word + the score + risk profile + a one-line rationale**. The verdict is a user-facing translation of the conviction score — not a price forecast, not mechanical — using this fixed 4-word vocabulary (plus a 5th band for data failures):
+
+| Verdict | Default score band | Action |
+|---|---|---|
+| **BUY** | 75-100 | Take a full position (enter if not held; size up if held and below cap) |
+| **SMALL BUY** | 65-74 | Dip-toe / starter position only (~half normal size); thesis is decent but conditional |
+| **HOLD** | 50-64 | Stay where you are (don't enter; don't change existing position) |
+| **SELL** | <50 | Don't take the position (avoid if not held; exit or trim hard if held) |
+| **INSUFFICIENT DATA** | n/a | Data Health fails for this objective; only the data gap is reported, no action |
+
+### Downgrading by one step
+
+The verdict may step down one band (BUY → SMALL BUY → HOLD → SELL) — **never up** — when:
+
+- The volatility-correct stop is wider than the user's tolerable drawdown (the stock doesn't fit the risk profile even if the score is good)
+- A major event is inside the trading window and the objective doesn't permit event-driven entry
+- The held-position would push above the single-stock cap if upsized
+
+The score is the conviction; downgrades reflect fit issues.
+
+### Format
+
+The Headline Verdict is the **first line** of the Executive Summary. Example:
+
+```
+**Headline Verdict (Balanced):** SMALL BUY · Composite Score 68/100
+Rationale: AI re-rating thesis intact, technicals strong, but valuation stretched and parabolic — start with half size, add on a deep pullback into the $13-14 zone.
+```
+
+### Hard rules
+
+- Use only BUY / SMALL BUY / HOLD / SELL / INSUFFICIENT DATA — never invent variants ("Strong Buy", "Speculative Buy", etc.)
+- Always include the risk profile in parentheses (matches the Scoring Framework column used)
+- Always include the score
+- The granular `add / trim / exit` framing for held positions lives in `Risk and Position Sizing` and `Final Conditional Strategy`, not the headline — headline stays one verdict
+- The verdict is **not** a forecast — keep all body text conditional ("if price holds X", "if revisions improve")
 
 ## Module Contract
 
@@ -375,7 +415,7 @@ See `references/strategy-registry.md`, `references/persona-criteria-v1.md`, and 
 - Match the user's language.
 - Produce a professional self-contained HTML report. Use `references/report-template.html` for structure + styling and `references/report-template.md` for the content schema and the Section Length Budget. Save the `.html` to the user's workspace folder and share a `computer://` link.
 - For `full SOP`, do not produce a short memo unless the evidence is genuinely thin. Default is rich analytical paragraphs across macro, sector, fundamentals, financial statements, valuation, technicals (with backtest validation sub-section), risk, debate. Include assumptions, evidence dates, counterarguments, sensitivity, catalysts, and explicit invalidation levels.
-- For `full SOP`, run a final report QA gate before answering. Expected sections: Data Health, Evidence Ledger, macro, sector/peer, fundamentals, financials, valuation, technicals + backtest validation, risk plan, scoring, event risk, debate, bear/base/bull scenarios, final strategy, missing-data section, and disclaimer. **A section may be marked `n/a — <reason>` (one line) when it genuinely doesn't apply to this ticker** (e.g., relative-valuation peers for a unique business; macro regime for a market-neutral position). The QA gate accepts `n/a` with a reason as a valid completion state — it does not accept silent omission.
+- For `full SOP`, run a final report QA gate before answering. Expected sections: Data Health, Executive Summary, **Recent Catalysts (last 90 days)**, Evidence Ledger, macro, sector/peer, fundamentals, financials, valuation, technicals + backtest validation, risk plan, scoring, event risk, debate, bear/base/bull scenarios, final strategy, missing-data section, and disclaimer. **A section may be marked `n/a — <reason>` (one line) when it genuinely doesn't apply to this ticker** (e.g., relative-valuation peers for a unique business; macro regime for a market-neutral position). The QA gate accepts `n/a` with a reason as a valid completion state — it does not accept silent omission.
 - Include daily and weekly chart images when API data and chart generation are available.
 - For `basic`, give a shorter professional report with enough data to be useful. End it with the footer suggesting upgrades (full SOP / backtest / persona lens / different technical window).
 - Include exact data dates and source names when possible.
