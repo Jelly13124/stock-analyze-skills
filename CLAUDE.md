@@ -14,7 +14,7 @@ design notes, READMEs, the ZIP builder) only supports that one skill.
 ```
 stock-analysis/            # the skill that ships — this is the product
   SKILL.md                 # router: Request Gate, Workflow, Scoring, Output rules
-  modules/                 # 11 analytical modules + investors/ (8 personas)
+  modules/                 # 12 analytical modules + investors/ (8 personas)
   references/              # schemas + rule sets (report templates, depth framework, ...)
   scripts/                 # data_provider.py, fetch_price_charts.py, backtest.py
   agents/openai.yaml       # Codex / OpenAI agent metadata
@@ -30,8 +30,8 @@ README.md / README.zh-CN.md
 - **Router pattern.** `SKILL.md` is the orchestrator; it loads `modules/*.md` with the
   `Read` tool only when a request needs them. Never preload every module — token cost
   should scale with the work.
-- **Modules** = 11 analytical (`macro, sector, company-fundamentals, financial-statements,
-  valuation, technical, sentiment, ownership-structure, risk-position, debate-panel, backtest`) + 8 investor
+- **Modules** = 12 analytical (`macro, sector, company-fundamentals, financial-statements,
+  valuation, technical, sentiment, ownership-structure, options-gamma, risk-position, debate-panel, backtest`) + 8 investor
   personas under `modules/investors/`.
 - **References** in `references/` are shared schemas and rule sets, loaded when relevant.
 
@@ -69,7 +69,7 @@ README.md / README.zh-CN.md
 The Request Gate / output / persona / scoring behavior is described in several files at
 once. If you change one, update all that are affected:
 `stock-analysis/SKILL.md`, `references/depth-framework.md`, `references/report-template.md`,
-`references/report-template.html`, `modules/debate-panel.md`, `modules/risk-position.md`, `modules/ownership-structure.md`.
+`references/report-template.html`, `modules/debate-panel.md`, `modules/risk-position.md`, `modules/ownership-structure.md`, `modules/options-gamma.md`.
 Keep `README.md` and `README.zh-CN.md` in sync with each other.
 
 ## Build & test
