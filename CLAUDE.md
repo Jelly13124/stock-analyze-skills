@@ -48,7 +48,7 @@ README.md / README.zh-CN.md
   Each tool call has its own budget, so 10+ small writes succeed where one giant
   response fails.
 - **Request Gate** asks one combined question for a bare ticker: (1) depth, (2) objective,
-  (3) position & risk profile — budget / current holding + cost basis / risk tolerance,
+  (3) position & risk profile — total capital (总仓位, → Kelly-optimal sizing) or a fixed amount / current holding + cost basis / risk tolerance,
   (4) debate mode (full SOP only). Output format and the technical window are NEVER asked.
 - **No API key required.** `scripts/data_provider.py` provider order is direct API (only
   with a key) -> `yfinance` (primary no-key source) -> prefetched JSON. The data scripts

@@ -213,7 +213,7 @@ Outputs equity-curve PNG, trades CSV, and a Markdown verdict with in-sample vs o
 | `standard` | Normal research request | Macro / sector / fundamentals / financials / valuation / technicals / sentiment / risk plan + bear / base / bull range |
 | `full SOP` | Institutional-style report or explicit "full" request | Full institutional workflow + Evidence Ledger + DCF / scenario math + charts + scoring + event risk + backtest validation + real multi-subagent debate (1-3 rounds) |
 
-If the user enters a bare ticker, the main skill asks for depth, objective, position budget, and — for full SOP — debate mode (persona agents or generic roles) before generating anything. The report is always delivered as a self-contained HTML file; output format is not asked, and the technical window is derived from the objective.
+If the user enters a bare ticker, the main skill asks for depth, objective, total capital (for Kelly-optimal sizing) or a fixed amount, and — for full SOP — debate mode (persona agents or generic roles) before generating anything. The report is always delivered as a self-contained HTML file; output format is not asked, and the technical window is derived from the objective.
 
 ## Repository Layout
 
