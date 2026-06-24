@@ -566,6 +566,58 @@ def yfinance_history(ticker: str, period: str, interval: str, source_name: str) 
     return provider_result("ok" if rows else "no_data", rows, source=source_name, provider="yfinance")
 
 
+def _holder_rows(frame: Any) -> list[dict]:
+    rows: list[dict] = []
+    if frame is None:
+        return rows
+    try:
+        for _, row in frame.iterrows():
+            rows.append(
+                {
+                    "holder": str(row.get("Holder") or row.get("holder") or ""),
+                    "shares": as_float(row.get("Shares") or row.get("shares")),
+                    "pct_out": as_float(row.get("pctHeld") or row.get("% Out") or row.get("pctOut")),
+                    "date_reported": str(row.get("Date Reported") or row.get("dateReported") or ""),
+                }
+            )
+    except Exception:  # noqa: BLE001
+        return rows
+    return rows
+
+
+def yfinance_ownership(ticker: str) -> dict:
+    if direct_disabled():
+        return {"status": "network_blocked", "source": "yfinance", "provider": "none"}
+    try:
+        import yfinance as yf  # type: ignore
+
+        tk = yf.Ticker(ticker)
+        try:
+            info = tk.get_info() or {}
+        except Exception:  # noqa: BLE001
+            info = {}
+        return {
+            "status": "ok",
+            "source": "yfinance",
+            "provider": "yfinance",
+            "shares_outstanding": as_float(info.get("sharesOutstanding")),
+            "float_shares": as_float(info.get("floatShares")),
+            "pct_held_insiders": as_float(info.get("heldPercentInsiders")),
+            "pct_held_institutions": as_float(info.get("heldPercentInstitutions")),
+            "shares_short": as_float(info.get("sharesShort")),
+            "shares_short_prior": as_float(info.get("sharesShortPriorMonth")),
+            "short_pct_float": as_float(info.get("shortPercentOfFloat")),
+            "short_ratio": as_float(info.get("shortRatio")),
+            "institutional_holders": _holder_rows(getattr(tk, "institutional_holders", None)),
+            "fund_holders": _holder_rows(getattr(tk, "mutualfund_holders", None)),
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        }
+    except ImportError:
+        return {"status": "missing_dependency", "source": "yfinance", "provider": "none"}
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "error": type(exc).__name__, "source": "yfinance", "provider": "none"}
+
+
 def get_quote(ticker: str, keys: dict[str, str]) -> dict:
     attempts = []
     direct = finnhub_quote(ticker, keys.get("FINNHUB_API_KEY"))
@@ -589,6 +641,19 @@ def get_quote(ticker: str, keys: dict[str, str]) -> dict:
     attempts.append({"source": "prefetched_web", "status": prefetched.get("status")})
 
     return {"status": "all_providers_failed", "source": "none", "provider": "none", "fallback": attempts}
+
+
+def get_ownership(ticker: str, keys: dict[str, str] | None = None) -> dict:
+    yf_own = yfinance_ownership(ticker)
+    if yf_own.get("status") == "ok":
+        return yf_own
+    prefetched = read_prefetched_json(ticker, "ownership")
+    if isinstance(prefetched, dict):
+        prefetched.setdefault("status", "ok")
+        prefetched.setdefault("provider", "prefetched_web")
+        prefetched.setdefault("source", "prefetched_web")
+        return prefetched
+    return yf_own
 
 
 def get_daily_ohlcv(ticker: str, keys: dict[str, str], days: int = 252) -> dict:
