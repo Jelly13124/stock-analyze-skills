@@ -13,6 +13,8 @@ Translate information flow around a stock into a forward-looking signal. Sentime
 
 This skill covers four information channels: insider transactions, company news flow, analyst EPS estimate revisions, and short interest / options positioning. It does not cover macro-level risk appetite (VIX, put/call) — that belongs in `stock-macro-analysis`.
 
+Structural ownership (float, short % of float, institutional/insider %, voting control) lives in `modules/ownership-structure.md`; this module covers the *change* and squeeze *signal*, not the static structure.
+
 ## Standalone Markdown Report Mode
 
 When called directly by a user, produce a self-contained Markdown sentiment report in the user's language. If ticker, time window, depth, or objective is unclear, ask one concise clarification first.

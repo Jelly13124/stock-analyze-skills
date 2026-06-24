@@ -15,6 +15,7 @@ Before finalizing a `full SOP` report, verify:
 - Data Health table covers quote, daily chart, weekly chart, requested intraday chart, financials/filings, macro, sector/peer, and news/transcript.
 - Evidence Ledger has at least 10 items. If evidence is missing, include missing items as low-confidence or unavailable evidence.
 - Recent Catalysts table covers the last 90 days (30 for `short-term trade`, 180 for `long-term`) with the 3–7 most material items, each dated and rated (Bull/Bear/Neutral, materiality High/Med/Low). Mark `n/a — no material catalysts` only when genuinely none exist.
+- Ownership & Shareholder Structure covers float, institutional/insider %, top-holder concentration, share-class/voting, and structural short % of float (or `n/a — <reason>`).
 - Valuation includes bear/base/bull assumptions, target ranges, sensitivity, share-count logic, net cash/debt when available, and margin of safety.
 - Technical analysis includes weekly, daily, and requested intraday tables, chart paths, support/resistance, breakout/invalidation, ATR risk band, and reward/risk.
 - Risk plan includes conservative, balanced, and aggressive frameworks when account size or risk style is unknown.
@@ -41,6 +42,7 @@ Per-section word **targets** for the report body (prose only — tables, the HTM
 | Macro Regime | 250–400 | |
 | Sector and Peer Comparison | 280–450 | |
 | **Company Fundamentals** | **700–1100** | **deepest section** — business/segment map, unit economics, moat, management, capital allocation, thesis breakers |
+| Ownership & Shareholder Structure | 200–350 + table | float / holders / short structure; cross-ref Sentiment for flow |
 | **Financial Statement Review** | **600–950** | **second deepest** — revenue/margin/EPS trend, balance sheet, cash-flow quality, GAAP vs non-GAAP, dilution/SBC |
 | Valuation Analysis | 450–700 | relative + DCF/scenario math |
 | Technical Analysis (incl. Backtest Validation) | 400–650 | the backtest sub-section is part of this budget |
@@ -144,6 +146,15 @@ If no material catalysts in the relevant window: `n/a — no material catalysts 
 - Financial translation into revenue, margin, cash flow, and valuation assumptions:
 - Thesis breakers and variant view:
 - Evidence gaps and confidence:
+
+## Ownership & Shareholder Structure
+- Ownership composition (institutional % / insider % / retail residual):
+- Float vs. shares outstanding; free float:
+- Top-10 holders and concentration:
+- Share classes and voting control (governance flag):
+- Short interest as % of float; days-to-cover (structural; cross-ref Sentiment for the change/signal):
+- Recent 13F / insider ownership changes (dated, web-sourced):
+- Implication for risk (squeeze / liquidity → sizing caps) and fundamentals (governance / alignment):
 
 ## Financial Statement Review
 - Reporting period and sources:

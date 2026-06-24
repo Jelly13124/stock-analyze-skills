@@ -55,7 +55,7 @@ For `full SOP`, the company fundamentals section is incomplete unless it include
 - industry structure and adoption cycle
 - competitive position and substitutes
 - strategic changes and catalysts
-- management, ownership, and capital allocation
+- management, ownership, and capital allocation (structural ownership detail — float, institutional/insider %, top holders, voting control — lives in `modules/ownership-structure.md`)
 - financial translation into revenue, margin, cash flow, and valuation assumptions
 - thesis breakers and variant view
 - evidence gaps and confidence
