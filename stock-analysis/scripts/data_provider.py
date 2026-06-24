@@ -567,6 +567,13 @@ def yfinance_history(ticker: str, period: str, interval: str, source_name: str) 
 
 
 def _holder_rows(frame: Any) -> list[dict]:
+    def first_present(row: Any, *keys: str) -> Any:
+        for k in keys:
+            v = row.get(k)
+            if v is not None:
+                return v
+        return None
+
     rows: list[dict] = []
     if frame is None:
         return rows
@@ -574,10 +581,10 @@ def _holder_rows(frame: Any) -> list[dict]:
         for _, row in frame.iterrows():
             rows.append(
                 {
-                    "holder": str(row.get("Holder") or row.get("holder") or ""),
-                    "shares": as_float(row.get("Shares") or row.get("shares")),
-                    "pct_out": as_float(row.get("pctHeld") or row.get("% Out") or row.get("pctOut")),
-                    "date_reported": str(row.get("Date Reported") or row.get("dateReported") or ""),
+                    "holder": str(first_present(row, "Holder", "holder") or ""),
+                    "shares": as_float(first_present(row, "Shares", "shares")),
+                    "pct_out": as_float(first_present(row, "pctHeld", "% Out", "pctOut")),
+                    "date_reported": str(first_present(row, "Date Reported", "dateReported") or ""),
                 }
             )
     except Exception:  # noqa: BLE001
@@ -596,6 +603,14 @@ def yfinance_ownership(ticker: str) -> dict:
             info = tk.get_info() or {}
         except Exception:  # noqa: BLE001
             info = {}
+        try:
+            inst_holders = tk.institutional_holders
+        except Exception:  # noqa: BLE001
+            inst_holders = None
+        try:
+            fund_holders = tk.mutualfund_holders
+        except Exception:  # noqa: BLE001
+            fund_holders = None
         return {
             "status": "ok",
             "source": "yfinance",
@@ -608,8 +623,8 @@ def yfinance_ownership(ticker: str) -> dict:
             "shares_short_prior": as_float(info.get("sharesShortPriorMonth")),
             "short_pct_float": as_float(info.get("shortPercentOfFloat")),
             "short_ratio": as_float(info.get("shortRatio")),
-            "institutional_holders": _holder_rows(getattr(tk, "institutional_holders", None)),
-            "fund_holders": _holder_rows(getattr(tk, "mutualfund_holders", None)),
+            "institutional_holders": _holder_rows(inst_holders),
+            "fund_holders": _holder_rows(fund_holders),
             "timestamp_utc": datetime.now(timezone.utc).isoformat(),
         }
     except ImportError:

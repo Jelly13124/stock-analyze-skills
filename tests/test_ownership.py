@@ -30,6 +30,11 @@ class TestSummarizeOwnership(unittest.TestCase):
         out = summarize_ownership(raw)
         self.assertEqual(len(out["top10_institutional"]), 10)
 
+    def test_top10_concentration_none_when_no_holders(self):
+        out = summarize_ownership({})
+        self.assertIsNone(out["top10_concentration_pct"])
+        self.assertEqual(out["top10_institutional"], [])
+
 
 if __name__ == "__main__":
     unittest.main()
