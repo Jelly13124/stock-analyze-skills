@@ -116,7 +116,7 @@ bound** and lean toward the smaller of the capped Kelly and the stop-based size.
 
 When the user already owns the stock and gave an average cost basis, the recommendation is a **hold / add / trim / exit** decision, not a fresh entry. Produce:
 
-- **Unrealized P&L** — current price vs cost basis, in % and (when budget is known) in dollars; repeat at the bear / base / bull scenario targets so the user sees the gain/loss range, not just the price range.
+- **Unrealized P&L** — current price vs cost basis, in % and (when total capital / position value is known) in dollars; repeat at the bear / base / bull scenario targets so the user sees the gain/loss range, not just the price range.
 - **Decision framing** — is the stock a buy *at today's price*? The cost basis is a sunk cost and must not drive the call. State this explicitly when the position is underwater ("the question is whether `<TICKER>` is worth owning now, not whether it returns to your cost").
 - **Add vs trim** — if the thesis is intact and the position sits below the single-stock cap, define an add level and size; if the position is above the cap or the thesis has weakened, define a trim/exit plan with levels.
 - **Two stop references** — a thesis-invalidation stop (technical) and a capital-preservation stop relative to cost basis; name which one binds first.

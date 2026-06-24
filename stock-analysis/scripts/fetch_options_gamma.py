@@ -65,6 +65,7 @@ def main() -> None:
         "spot": spot,
         "provider": chain.get("provider"),
         "source": chain.get("source"),
+        "as_of": quote.get("timestamp_utc"),
         "r_assumed": args.rate,
         "dealer_sign_assumption": "long call gamma / short put gamma (naive GEX)",
         "caveats": [
@@ -112,6 +113,7 @@ def main() -> None:
             "max_pain_strike": max_pain(calls_oi, puts_oi),
             "expiries_used": chain.get("expiries", []),
             "n_contracts": len(contracts),
+            "data_quality": f"{len(contracts)} contracts across {len(chain.get('expiries', []))} expiries",
         }
     )
     out_path.write_text(json.dumps(bundle, indent=2), encoding="utf-8")
