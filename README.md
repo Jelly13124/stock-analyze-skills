@@ -13,7 +13,7 @@
 ![Platforms](https://img.shields.io/badge/platforms-Claude%20Code%20·%20Desktop%20·%20Codex%20·%20Web-purple)
 ![Last Commit](https://img.shields.io/github/last-commit/Jelly13124/stock-analyze-skills)
 
-A composable, institutional-grade equity research toolkit built as a suite of Claude Code Skills. Translates a multi-step analyst SOP into Markdown prompt files — with explicit numeric thresholds, real multi-subagent debate, and a panel of named investor personas you can converse with directly.
+A composable, institutional-grade equity research toolkit built as a suite of Claude Code Skills. Translates a multi-step analyst SOP into Markdown prompt files — with explicit numeric thresholds, real multi-subagent debate, dealer-gamma and ownership-structure analysis, Kelly-based position sizing, and a panel of named investor personas you can converse with directly.
 
 Works in Claude Code, Claude Desktop, Cowork, Codex, and (with one extra zip step) Claude.ai web.
 
@@ -173,9 +173,10 @@ All five modes use the single `/stock-analysis` slash command — what changes i
 
 ```text
 /stock-analysis NFLX full SOP, objective target-price (or short-term / medium-term / long-term / earnings-review)
+/stock-analysis NVDA full SOP, medium-term, total capital $100k   # → Kelly-sized position
 ```
 
-The orchestrator collects evidence, reads every required module in order, and assembles a single self-contained HTML report.
+The orchestrator collects evidence, reads every required module in order, and assembles a single self-contained HTML report. Give **total capital** (总仓位) and it computes the Kelly-optimal allocation; give a fixed amount and it sizes to that.
 
 ### Mode 2 — Single module
 
@@ -183,6 +184,8 @@ The orchestrator collects evidence, reads every required module in order, and as
 /stock-analysis just the valuation module on NFLX, full depth, target price
 /stock-analysis run the technical module on NFLX, intraday 5m KDJ RSI
 /stock-analysis sentiment module only, NFLX, 30-day window
+/stock-analysis ownership / shareholder structure on NVDA
+/stock-analysis dealer gamma (GEX) on SPY
 ```
 
 There is no separate slash command per module anymore — name the module in the prompt.
@@ -218,7 +221,7 @@ Outputs equity-curve PNG, trades CSV, and a Markdown verdict with in-sample vs o
 | Depth | When | Output |
 |---|---|---|
 | `basic` | Quick view, first-pass opinion | Data Health, price snapshot, valuation snapshot, key risks |
-| `standard` | Normal research request | Macro / sector / fundamentals / financials / valuation / technicals / sentiment / risk plan + bear / base / bull range |
+| `standard` | Normal research request | Macro / sector / fundamentals / financials / valuation / technicals / sentiment / ownership / risk plan + bear / base / bull range |
 | `full SOP` | Institutional-style report or explicit "full" request | Full institutional workflow + Evidence Ledger + DCF / scenario math + charts + scoring + event risk + backtest validation + real multi-subagent debate (1-3 rounds) |
 
 If the user enters a bare ticker, the main skill asks for depth, objective, total capital (for Kelly-optimal sizing) or a fixed amount, and — for full SOP — debate mode (persona agents or generic roles) before generating anything. The report is always delivered as a self-contained HTML file; output format is not asked, and the technical window is derived from the objective.

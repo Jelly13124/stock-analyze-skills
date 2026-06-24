@@ -13,7 +13,7 @@
 ![Platforms](https://img.shields.io/badge/platforms-Claude%20Code%20·%20Desktop%20·%20Codex%20·%20Web-purple)
 ![Last Commit](https://img.shields.io/github/last-commit/Jelly13124/stock-analyze-skills)
 
-一套机构级股票研究的可组合 Skill 工具集,把多步分析师 SOP 翻译成 Markdown 提示词文件 — 含显式数值阈值、真实多 subagent 辩论、以及 8 位可直接对话的投资大师人格。
+一套机构级股票研究的可组合 Skill 工具集,把多步分析师 SOP 翻译成 Markdown 提示词文件 — 含显式数值阈值、真实多 subagent 辩论、做市商 gamma 与股权结构分析、凯利仓位管理、以及 8 位可直接对话的投资大师人格。
 
 支持 Claude Code、Claude Desktop、Cowork、Codex,以及 Claude.ai 网页端 (需要额外打包 zip)。
 
@@ -173,9 +173,10 @@ outputs/NFLX_test/NFLX_intraday_1d_5m_chart.png
 
 ```text
 /stock-analysis NFLX full SOP, 目标 目标价 (或 短线交易 / 中期策略 / 长期投资 / 财报分析)
+/stock-analysis NVDA full SOP, 中期策略, 总仓位 $100k   # → 凯利配比
 ```
 
-orchestrator 收集证据,按顺序 `Read` 必需的 module,组装成单份自包含 HTML 报告。
+orchestrator 收集证据,按顺序 `Read` 必需的 module,组装成单份自包含 HTML 报告。给**总仓位**就用凯利算最优配比;给固定金额就按固定金额下注。
 
 ### 模式 2 — 单 module 调用
 
@@ -183,6 +184,8 @@ orchestrator 收集证据,按顺序 `Read` 必需的 module,组装成单份自�
 /stock-analysis 只跑 valuation module, NFLX full 目标价
 /stock-analysis 跑一下 technical module, NFLX 盘中 5m KDJ RSI
 /stock-analysis 只要 sentiment module, NFLX 30 天窗口
+/stock-analysis NVDA 的股权结构
+/stock-analysis SPY 的做市商 gamma (GEX)
 ```
 
 不再有每个 module 各自的斜杠命令 — 在提示里写明要哪个 module 即可。
@@ -218,7 +221,7 @@ orchestrator 加载 `modules/debate-panel.md`, 把每个角色作为独立并行
 | Depth | 适用场景 | 输出 |
 |---|---|---|
 | `basic` | 快速一瞥、初判 | Data Health、价格快照、估值快照、关键风险 |
-| `standard` | 常规研究请求 | 宏观 / 行业 / 基本面 / 财报 / 估值 / 技术 / 情绪 / 风险计划 + bear/base/bull 区间 |
+| `standard` | 常规研究请求 | 宏观 / 行业 / 基本面 / 财报 / 估值 / 技术 / 情绪 / 股权 / 风险计划 + bear/base/bull 区间 |
 | `full SOP` | 机构级报告或明确"完整"请求 | 完整机构级工作流 + 证据账本 + DCF / 情景计算 + 图表 + 评分 + 事件风险 + 回测验证 + 真实多 subagent 辩论 (1-3 轮) |
 
 如果用户只输入裸 ticker,主 skill 会先追问报告深度、目标、总仓位(用于凯利最优配比)或固定金额,以及(仅 full SOP)辩论模式是否启用投资人人格,再开始生成。报告统一输出为单文件 HTML,不再追问输出格式;技术窗口由目标自动推导。
