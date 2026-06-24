@@ -6,7 +6,7 @@
 
 # 股票分析 Skill 包 (Stock Analyze Skills)
 
-![Skills](https://img.shields.io/badge/skills-1%20suite%2C%2018%20modules-blue)
+![Skills](https://img.shields.io/badge/skills-1%20suite%2C%2019%20modules-blue)
 ![Personas](https://img.shields.io/badge/investor%20personas-8-success)
 ![Multi-Subagent Debate](https://img.shields.io/badge/debate-real%20multi--subagent-orange)
 ![Backtest](https://img.shields.io/badge/backtest-v1%20indicator%20%2B%20signal%20%2B%20persona-yellow)
@@ -32,9 +32,9 @@
 
 ## Module 列表
 
-整套 suite 是一个 skill (`stock-analysis`),包含 18 个被 orchestrator 按需加载的内部 module。
+整套 suite 是一个 skill (`stock-analysis`),包含 19 个被 orchestrator 按需加载的内部 module。
 
-### 分析类 module (10 个)
+### 分析类 module (11 个)
 
 | Module | 用途 |
 |---|---|
@@ -45,6 +45,7 @@
 | `modules/valuation.md` | 相对估值 + 内在估值,DCF、Owner Earnings、Residual Income、WACC 参考表、情景概率加权。 |
 | `modules/technical.md` | 多时间框架趋势、RSI / KDJ / MACD / BB / ATR / OBV + 4 策略量化层。 |
 | `modules/sentiment.md` | Insider 交易、新闻流、分析师 EPS 修正、空头利息、期权定位。 |
+| `modules/ownership-structure.md` | 流通股、机构 / 内部人持股 %、前十大股东、股权分级、投票权、结构性空头。 |
 | `modules/risk-position.md` | 仓位、止损逻辑、R:R、行业上限、波动率调整的单股 cap。 |
 | `modules/debate-panel.md` | 真实多 subagent 投资委员会辩论 (1 / 2 / 3 轮)。 |
 | `modules/backtest.md` | 单股票历史回测。指标策略、信号事件研究、或投资大师配仓回测。输出权益曲线、Sharpe、MDD、交易明细 CSV、样本内 / 样本外指标拆分、过拟合诊断。 |
@@ -110,7 +111,7 @@ Copy-Item .\stock-analysis "$env:USERPROFILE\.codex\skills\" -Recurse -Force
 
 ### Claude Desktop
 
-在 Skills 页面里导入单个 `stock-analysis` 文件夹。全部 18 个 module 都在里面。
+在 Skills 页面里导入单个 `stock-analysis` 文件夹。全部 19 个 module 都在里面。
 
 ### Claude.ai 网页端
 
@@ -230,6 +231,7 @@ stock-analyze-skills/
 │   │   ├── valuation.md
 │   │   ├── technical.md
 │   │   ├── sentiment.md
+│   │   ├── ownership-structure.md
 │   │   ├── risk-position.md
 │   │   ├── debate-panel.md
 │   │   ├── backtest.md

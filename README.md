@@ -6,7 +6,7 @@
 
 # Stock Analyze Skills
 
-![Skills](https://img.shields.io/badge/skills-1%20suite%2C%2018%20modules-blue)
+![Skills](https://img.shields.io/badge/skills-1%20suite%2C%2019%20modules-blue)
 ![Personas](https://img.shields.io/badge/investor%20personas-8-success)
 ![Multi-Subagent Debate](https://img.shields.io/badge/debate-real%20multi--subagent-orange)
 ![Backtest](https://img.shields.io/badge/backtest-v1%20indicator%20%2B%20signal%20%2B%20persona-yellow)
@@ -32,9 +32,9 @@ Works in Claude Code, Claude Desktop, Cowork, Codex, and (with one extra zip ste
 
 ## Module Map
 
-The suite is one skill (`stock-analysis`) containing 18 internal modules loaded on demand by the orchestrator.
+The suite is one skill (`stock-analysis`) containing 19 internal modules loaded on demand by the orchestrator.
 
-### Analytical modules (10)
+### Analytical modules (11)
 
 | Module | Purpose |
 |---|---|
@@ -45,6 +45,7 @@ The suite is one skill (`stock-analysis`) containing 18 internal modules loaded 
 | `modules/valuation.md` | Relative + intrinsic valuation, DCF, Owner Earnings, Residual Income, WACC reference, scenario expected value. |
 | `modules/technical.md` | Multi-timeframe trend, RSI / KDJ / MACD / BB / ATR / OBV + 4-strategy Quantitative Layer. |
 | `modules/sentiment.md` | Insider trades, news flow, analyst EPS revisions, short interest, options positioning. |
+| `modules/ownership-structure.md` | Float, institutional / insider %, top holders, share classes, voting control, structural short interest. |
 | `modules/risk-position.md` | Position sizing, stop logic, R:R, sector cap, vol-adjusted single-stock cap. |
 | `modules/debate-panel.md` | Real multi-subagent investment-committee debate (1 / 2 / 3 rounds). |
 | `modules/backtest.md` | Single-ticker historical backtest. Indicator strategies, signal event-study, or persona allocation. Outputs equity curve, Sharpe, MDD, trades CSV, in-sample / out-of-sample split, overfit diagnostics. |
@@ -110,7 +111,7 @@ Copy-Item .\stock-analysis "$env:USERPROFILE\.codex\skills\" -Recurse -Force
 
 ### Claude Desktop
 
-Import the single `stock-analysis` folder in the Skills page. All 18 modules ship inside it.
+Import the single `stock-analysis` folder in the Skills page. All 19 modules ship inside it.
 
 ### Claude.ai Web
 
@@ -230,6 +231,7 @@ stock-analyze-skills/
 │   │   ├── valuation.md
 │   │   ├── technical.md
 │   │   ├── sentiment.md
+│   │   ├── ownership-structure.md
 │   │   ├── risk-position.md
 │   │   ├── debate-panel.md
 │   │   ├── backtest.md
