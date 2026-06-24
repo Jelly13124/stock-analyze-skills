@@ -48,15 +48,15 @@ A bare ticker (`NVDA`, `分析一下 DPZ`, `NVDA 怎么样`) specifies none of t
 `Before I analyze <TICKER> (<one-line company identification, e.g. "Domino's Pizza">), please confirm:
 (1) Depth — basic (quick snapshot) / standard (full analyst report) / full SOP (institutional-grade: debate, scoring, scenarios, backtest validation);
 (2) Objective — target price / short-term trade / medium-term strategy / long-term investment / earnings review;
-(3) Position & risk — (a) budget: a dollar amount or % of portfolio; (b) do you already hold <TICKER>, and if so your average cost basis; (c) risk tolerance — how big a paper drawdown on this position can you sit through? conservative (≈ up to 10%) / balanced (≈ 10-20%) / aggressive (≈ 25%+), or give your own number. Reply "skip" to any part you'd rather not give;
+(3) Position & risk — (a) total investable capital (总仓位) — your whole account / investable pot, so I can compute the Kelly-optimal allocation for this name; OR give a fixed dollar amount or % if you'd rather size it yourself, and I'll use that directly; (b) do you already hold <TICKER>, and if so your average cost basis; (c) risk tolerance — how big a paper drawdown on this position can you sit through? conservative (≈ up to 10%) / balanced (≈ 10-20%) / aggressive (≈ 25%+), or give your own number. Reply "skip" to any part you'd rather not give;
 (4) Debate mode (full SOP only) — should the multi-agent debate use investor-persona agents (Buffett / Wood / Burry etc. — I auto-select the matchup) or generic Bull / Bear / Quant / Risk roles? Default is persona agents.
-You can also reply with a one-liner like "standard, target price, $10k, hold at $9.50, OK with a ~15% drawdown" and I'll start straight away. The report is always delivered as an HTML file — format is not asked.`
+You can also reply with a one-liner like "standard, target price, total capital $100k, hold at $9.50, OK with a ~15% drawdown" and I'll start straight away. The report is always delivered as an HTML file — format is not asked.`
 
 Notes:
 - Always identify the company by name in the question so the user knows the ticker resolved correctly (the screenshot failure mode: user typing `DPZ` and not being sure Claude knows it's Domino's Pizza).
 - **Output format is not asked** — every report is a self-contained HTML file (see Output Format below).
 - Backtest validation is **not** a separate question — it is automatically included for `full SOP`, and offered in the report footer for `basic`/`standard`.
-- **Item (3) shapes the risk section.** Budget → concrete dollar sizing in `risk-position.md`. "Already hold it at $X" → the report frames the call as hold / add / trim / exit with unrealized P&L vs scenarios, not a fresh entry. Risk tolerance → selects the conservative/balanced/aggressive framework directly. Any part the user skips falls back to its default — see Position & Risk Profile Use below.
+- **Item (3) shapes the risk section.** Total capital → Kelly-optimal allocation (% + dollars) in `risk-position.md`; a user-supplied fixed amount overrides Kelly and sizes to that amount directly. "Already hold it at $X" → the report frames the call as hold / add / trim / exit with unrealized P&L vs scenarios, not a fresh entry. Risk tolerance → selects the conservative/balanced/aggressive framework directly. Any part the user skips falls back to its default — see Position & Risk Profile Use below.
 - **Item (4) is the only persona question, and only matters for `full SOP`** (basic/standard have no debate). It is a simple on/off toggle for *persona-based* debate — Claude still auto-selects *which* personas; the user is never asked to name them. If the user picks `full SOP` and skips item (4), default to persona agents. See the Persona Selection Table and Investor Persona Routing below.
 
 ### Partial specification
@@ -91,13 +91,15 @@ If the user *explicitly* requests a window contrary to the table ("show me intra
 
 Item (3) of the Request Gate has three parts. Pass whatever the user gives into `modules/risk-position.md`:
 
-**Budget** (dollar amount or % of portfolio) — the risk section produces concrete numbers:
+**Total capital (总仓位)** — the user's whole investable pot. The risk section computes the **Kelly-optimal allocation** for this name and produces concrete numbers:
 
-- exact share count or notional based on the entry level
-- dollar value at each scenario (bear / base / bull)
-- dollar value at the stop level (max loss in $) and at the take-profit / target (max gain in $)
+- recommended position as **% of total capital and in dollars**, via the Kelly Position Sizing method in `modules/risk-position.md` (fractional Kelly scaled by risk tolerance, then capped by the single-stock and volatility-adjusted caps, floored at 0)
+- exact share count or notional at the entry level
+- dollar value at each scenario (bear / base / bull), at the stop (max loss in $), and at the target (max gain in $)
 - R:R ratio with dollar context
-- whether the position exceeds the recommended single-stock cap (default 5% of portfolio; warn if the budget implies higher concentration)
+- the full Kelly worktable (f*, fraction k, caps, stop-based size) and which constraint binds
+
+If the user instead gave a **fixed dollar amount or %**, skip Kelly: size to that amount, still warn if it exceeds the single-stock cap.
 
 **Current holding + cost basis** — if the user already owns `<TICKER>`:
 
@@ -112,7 +114,7 @@ Item (3) of the Request Gate has three parts. Pass whatever the user gives into 
 - feed the tolerable-drawdown number into the stop logic: the stop should sit within that band; if the volatility-correct stop is wider, size down or flag the name as too volatile for this tolerance
 - for the final score, the band maps to a Scoring Framework weight column (≤10% → Conservative, 10-20% → Balanced, >20% → Aggressive)
 
-If the user replied `skip` to a part, the risk section falls back to the default for that part: budget skipped → % terms only, no dollar sizing; holding skipped → assume a fresh entry; risk tolerance skipped → present conservative / balanced / aggressive variants.
+If the user replied `skip` to a part, the risk section falls back to the default for that part: total capital skipped → Kelly fraction in % terms only, no dollar sizing; holding skipped → assume a fresh entry; risk tolerance skipped → present conservative / balanced / aggressive variants.
 
 ### Persona Selection Table
 
@@ -137,7 +139,7 @@ For ambiguous tickers, pick two contrasting personas (e.g. Buffett for the moat 
 - If the user explicitly asks for "complete", "full", "professional report", or "完整报告" — depth is known (`full SOP`); ask the combined question for the remaining items only.
 - If the user asks for "quick" — depth is known (`basic`); ask the combined question for the remaining items only.
 - If the user requests **technical analysis, K-line, RSI/KDJ, breakout, or short-term trading** — that implies depth and objective leanings, but still ask the combined question for whatever is unconfirmed. Never ask the technical window directly; derive it from the objective.
-- If the user gives a position budget but no objective, still ask the objective in the combined question; do not silently default it.
+- If the user gives a total capital or a fixed amount but no objective, still ask the objective in the combined question; do not silently default it.
 - Use the user's latest language for the report.
 
 See `references/depth-framework.md` for the depth matrix. For `full` reports, follow the Workflow + Adaptive Module Selection sections of this SKILL.md — they are the canonical SOP. (A longer prescriptive 7-step SOP file used to live at `references/Stock_Analysis_SOP_v1.0.md` but was removed for over-constraining Claude's judgment; the Workflow + per-module Standalone Mode + report-template now carry the SOP role.)
@@ -211,7 +213,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
 ## Workflow
 
 1. Resolve the ticker, exchange, company name, sector, industry, and report language.
-2. Confirm depth, objective, position & risk profile (budget, current holding + cost basis, risk tolerance), and (for `full SOP`) debate mode via the Request Gate. Derive the technical window from the objective via the Technical Window Defaults table — do not ask the user. Output format is not asked — the report is always HTML.
+2. Confirm depth, objective, position & risk profile (total capital or fixed amount, current holding + cost basis, risk tolerance), and (for `full SOP`) debate mode via the Request Gate. Derive the technical window from the objective via the Technical Window Defaults table — do not ask the user. Output format is not asked — the report is always HTML.
 3. Collect source data with dates:
    - price, volume, market cap, beta, 52-week range
    - latest 10-K/10-Q, earnings release, guidance, transcript if available
