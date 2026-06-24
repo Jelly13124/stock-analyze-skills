@@ -206,7 +206,7 @@ content and save as {TICKER}_report.html alongside the chart PNGs.
   <dt>Depth:</dt> <dd>{{DEPTH}}</dd>
   <dt>Format:</dt> <dd>HTML</dd>
   <dt>Objective:</dt> <dd>{{OBJECTIVE}}</dd>
-  <dt>Position budget:</dt> <dd>{{POSITION_BUDGET_OR_NA}}</dd>
+  <dt>Total capital / sizing:</dt> <dd>{{TOTAL_CAPITAL_OR_NA}}</dd>
 </dl>
 
 <h2>Data Health</h2>
@@ -334,6 +334,25 @@ content and save as {TICKER}_report.html alongside the chart PNGs.
     <tr><td>Conservative</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
     <tr><td>Balanced</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
     <tr><td>Aggressive</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  </tbody>
+</table>
+
+<h3>Kelly Position Sizing (total-capital mode)</h3>
+<!-- Fill when the user gave total capital (总仓位). If they gave a fixed amount, omit this
+     block and size to that amount. -->
+<table>
+  <thead>
+    <tr><th>Input / step</th><th>Value</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Total capital (C)</td><td class="num"></td></tr>
+    <tr><td>Scenario probabilities (bear / base / bull)</td><td></td></tr>
+    <tr><td>Full Kelly f*</td><td class="num"></td></tr>
+    <tr><td>Fraction k (risk-tolerance)</td><td class="num"></td></tr>
+    <tr><td>Caps (single-stock / vol-adjusted)</td><td></td></tr>
+    <tr><td>Stop-based size f_stop</td><td class="num"></td></tr>
+    <tr><td><strong>Recommended position (% / $ / shares)</strong></td><td></td></tr>
+    <tr><td>Binding constraint</td><td></td></tr>
   </tbody>
 </table>
 

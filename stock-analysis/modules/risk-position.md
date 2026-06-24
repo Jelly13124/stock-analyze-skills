@@ -45,7 +45,7 @@ Every standalone report or main-report section must include a conclusion, source
 
 ## Inputs
 
-- Position budget (account size, or a dollar/% allocation) if provided; otherwise use percentage-based sizing only.
+- Total investable capital (总仓位) if provided — drives Kelly Position Sizing below. A user-supplied fixed dollar/% amount overrides Kelly and is used as-is. If neither is given, use percentage-based sizing only.
 - Risk tolerance — the paper drawdown the user can sit through on this position (conservative ≈ ≤10%, balanced ≈ 10-20%, aggressive ≈ 25%+, or a specific number). Usually supplied by the orchestrator's Request Gate (item 3); if absent, present all three variants.
 - Current holding status and average cost basis, if the user already owns the stock — triggers Held-Position Analysis below.
 - Entry price or current price, stop level, target levels, ATR, support/resistance, and macro regime.
@@ -68,6 +68,49 @@ Default risk styles:
 The Request Gate captures risk tolerance as the **paper drawdown the user can sit through on this position**. When it is supplied, use that one row and do not present the other two as variants. If the user gave a specific number (e.g. "15%"), use that number directly for the stop logic and map it to the nearest style for the caps (≤10% → conservative, 10-20% → balanced, >20% → aggressive).
 
 **Tolerable drawdown drives the stop.** Place the stop within the user's tolerable-drawdown band. If the volatility-correct stop (2×ATR, or below structural support) is *wider* than that band, the position is too volatile for this risk tolerance at full size — either size down so the dollar loss at the wider stop stays acceptable, or flag the name as unsuitable for this profile. State which applies, and check the stock's annualized volatility (see Volatility-Adjusted Single-Stock Cap below) against the band — a name that routinely swings more than the band will stop the user out on noise.
+
+## Kelly Position Sizing (Total-Capital Mode)
+
+When the user gives **total investable capital (总仓位)** rather than a fixed amount, compute the
+Kelly-optimal allocation for this name from the bear/base/bull scenarios. Kelly answers "what
+fraction of capital maximizes long-run growth", which is exactly the total-capital question.
+
+**Inputs:** total capital `C`; entry `E`; stop `S`; scenario targets `T_bear / T_base / T_bull`
+with probabilities `p_bear / p_base / p_bull` (sum = 1); risk-tolerance band.
+
+**Method (multi-outcome Kelly over the three scenarios):**
+
+```
+r_i      = (T_i − E) / E                            # scenario returns (bear negative)
+r_bear   = max((T_bear − E)/E, −|E − S|/E)          # the stop caps the realized downside
+f*       = the f in [0,1] maximizing  Σ p_i · ln(1 + f·r_i)   # full Kelly (grid-search f)
+                                                    # binary sanity check: f = (p·b − q)/b,
+                                                    # p = P(r>0), q = 1−p, b = mean win / |mean loss|
+k        = 0.25 conservative | 0.50 balanced | 0.75 aggressive   # fractional Kelly by tolerance
+f_kelly  = max(0, k · f*)                           # negative edge → 0 (avoid / short candidate)
+f_final  = min(f_kelly, single_stock_cap, vol_adjusted_cap)      # Kelly never exceeds the caps
+f_stop   = risk_per_trade ÷ (|E − S| / E)           # the existing stop-based size, as % of capital
+position = min(f_final, f_stop) × C                 # most conservative binds; output $ and shares
+```
+
+- **Show the worktable**: `f*`, `k`, `f_kelly`, the caps, `f_stop`, and which constraint binds.
+- **Held position**: target $ = `position`; delta = target − current value → **add / trim** to reach optimal.
+- **`f* ≤ 0`** (negative edge): recommend **no long position**; flag as an avoid / potential short.
+
+**Scenario probabilities.** Prefer the bear/base/bull confidences already set in the report. When
+they are not explicit, map from the conviction score:
+
+| Conviction score | (p_bear, p_base, p_bull) |
+|---|---|
+| 75–100 | 0.15 / 0.45 / 0.40 |
+| 65–74  | 0.20 / 0.50 / 0.30 |
+| 50–64  | 0.30 / 0.50 / 0.20 |
+| <50    | 0.45 / 0.45 / 0.10 |
+
+**Caveats (always disclose):** Kelly is highly sensitive to `p` and `b` estimation error — hence
+fractional Kelly, never full. A single analysis gives uncertain estimates. Kelly assumes
+repeatable independent bets; for a one-off concentrated position treat the output as an **upper
+bound** and lean toward the smaller of the capped Kelly and the stop-based size.
 
 ## Held-Position Analysis
 
@@ -134,7 +177,7 @@ Return a Markdown report or report section with:
 - the risk tolerance used (or conservative / balanced / aggressive variants if none was supplied)
 - entry/stop/target plan
 - reward/risk ratio
-- position sizing formula or percentage guidance
+- Kelly Position Sizing worktable when total capital was given (f*, fraction k, caps, stop-based size, binding constraint, recommended % + $ + shares); otherwise the position-sizing formula or percentage guidance
 - hold / add / trim / exit guidance and unrealized P&L vs cost basis when the user already owns the stock
 - scale-in and scale-out rules
 - short-term strategy

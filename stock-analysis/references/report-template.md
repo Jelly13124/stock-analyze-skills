@@ -180,6 +180,9 @@ If no material catalysts in the relevant window: `n/a — no material catalysts 
 
 ## Risk and Position Sizing
 - Risk style assumption:
+- Sizing mode: Kelly (total-capital) or fixed-amount:
+- Kelly worktable (f*, fraction k, caps, stop-based size, binding constraint): when total capital given
+- Recommended position (% of total capital + $ + shares):
 - Conservative plan:
 - Balanced plan:
 - Aggressive plan:
