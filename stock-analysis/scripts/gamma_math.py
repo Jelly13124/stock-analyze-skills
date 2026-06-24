@@ -35,8 +35,8 @@ def contract_gex(spot, strike, t_years, iv, oi, kind, r=0.045) -> float:
 def net_gex_at(spot, contracts, r=0.045) -> float:
     """Sum signed contract GEX across the chain at a hypothetical spot."""
     return sum(
-        contract_gex(spot, c["strike"], c["t_years"], c["iv"], c.get("oi", 0.0), c["kind"], r)
-        for c in contracts
+        (contract_gex(spot, c["strike"], c["t_years"], c["iv"], c.get("oi", 0.0), c["kind"], r) for c in contracts),
+        0.0,
     )
 
 

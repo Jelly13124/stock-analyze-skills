@@ -54,7 +54,7 @@ def main() -> None:
     keys = load_keys(args.key_file)
     quote = get_quote(args.ticker, keys)
     spot = quote.get("c")
-    chain = get_option_chain(args.ticker, keys)
+    chain = get_option_chain(args.ticker, keys, max_expiries=args.max_expiries)
 
     out_dir = Path(args.output_dir) if args.output_dir and args.output_dir != "auto" else get_output_dir()
     out_dir.mkdir(parents=True, exist_ok=True)

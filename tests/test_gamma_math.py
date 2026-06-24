@@ -4,7 +4,13 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "stock-analysis" / "scripts"))
 
-from gamma_math import bs_gamma, find_gamma_flip, gamma_wall, max_pain, net_gex_at  # noqa: E402
+from gamma_math import bs_gamma, contract_gex, find_gamma_flip, gamma_wall, max_pain, net_gex_at  # noqa: E402
+
+
+class TestContractGex(unittest.TestCase):
+    def test_call_positive_put_negative(self):
+        self.assertGreater(contract_gex(100, 100, 0.25, 0.30, 1000, "call"), 0.0)
+        self.assertLess(contract_gex(100, 100, 0.25, 0.30, 1000, "put"), 0.0)
 
 
 class TestBSGamma(unittest.TestCase):
@@ -60,6 +66,14 @@ class TestGammaWall(unittest.TestCase):
             {"strike": 105, "t_years": 0.25, "iv": 0.30, "oi": 9000, "kind": "call"},
         ]
         self.assertEqual(gamma_wall(contracts, "call", 100), 105)
+
+    def test_put_wall_and_missing_kind(self):
+        contracts = [
+            {"strike": 95, "t_years": 0.25, "iv": 0.30, "oi": 8000, "kind": "put"},
+            {"strike": 90, "t_years": 0.25, "iv": 0.30, "oi": 100, "kind": "put"},
+        ]
+        self.assertEqual(gamma_wall(contracts, "put", 100), 95)
+        self.assertIsNone(gamma_wall(contracts, "call", 100))
 
 
 if __name__ == "__main__":

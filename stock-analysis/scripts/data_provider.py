@@ -718,8 +718,8 @@ def get_ownership(ticker: str, keys: dict[str, str] | None = None) -> dict:
     return yf_own
 
 
-def get_option_chain(ticker: str, keys: dict[str, str] | None = None) -> dict:
-    yf_chain = yfinance_option_chain(ticker)
+def get_option_chain(ticker: str, keys: dict[str, str] | None = None, max_expiries: int = 6) -> dict:
+    yf_chain = yfinance_option_chain(ticker, max_expiries)
     if yf_chain.get("status") == "ok":
         return yf_chain
     prefetched = read_prefetched_json(ticker, "options")
