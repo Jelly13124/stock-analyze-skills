@@ -222,6 +222,8 @@ Do not run debate on an empty evidence base. If evidence is missing, ask for dat
 | Risk Manager | Stress-test position sizing, downside, liquidity, event risk, and stop logic | Usually no |
 | Moderator | Reconcile views into target ranges, strategy, confidence, and open questions | Optional Munger swap |
 
+Quant and Risk-manager roles should cite the dealer-gamma regime (`modules/options-gamma.md`) and structural float / short interest (`modules/ownership-structure.md`) when they bear on the setup — e.g., negative-gamma amplification, low-float squeeze risk.
+
 ## Output Contract
 
 Return a Markdown report or report section with:
