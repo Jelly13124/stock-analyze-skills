@@ -633,6 +633,53 @@ def yfinance_ownership(ticker: str) -> dict:
         return {"status": "error", "error": type(exc).__name__, "source": "yfinance", "provider": "none"}
 
 
+def _opt_rows(frame: Any) -> list[dict]:
+    rows: list[dict] = []
+    if frame is None:
+        return rows
+    try:
+        for _, row in frame.iterrows():
+            strike = as_float(row.get("strike"))
+            if strike is None:
+                continue
+            rows.append(
+                {
+                    "strike": strike,
+                    "open_interest": as_float(row.get("openInterest")) or 0.0,
+                    "implied_volatility": as_float(row.get("impliedVolatility")),
+                    "volume": as_float(row.get("volume")) or 0.0,
+                }
+            )
+    except Exception:  # noqa: BLE001
+        return rows
+    return rows
+
+
+def yfinance_option_chain(ticker: str, max_expiries: int = 6) -> dict:
+    if direct_disabled():
+        return {"status": "network_blocked", "source": "yfinance", "provider": "none", "expiries": [], "chains": []}
+    try:
+        import yfinance as yf  # type: ignore
+
+        tk = yf.Ticker(ticker)
+        expiries = list(tk.options or [])[:max_expiries]
+        chains = []
+        for exp in expiries:
+            oc = tk.option_chain(exp)
+            chains.append({"expiry": exp, "calls": _opt_rows(oc.calls), "puts": _opt_rows(oc.puts)})
+        return {
+            "status": "ok" if chains else "no_data",
+            "source": "yfinance",
+            "provider": "yfinance",
+            "expiries": expiries,
+            "chains": chains,
+        }
+    except ImportError:
+        return {"status": "missing_dependency", "source": "yfinance", "provider": "none", "expiries": [], "chains": []}
+    except Exception as exc:  # noqa: BLE001
+        return {"status": "error", "error": type(exc).__name__, "source": "yfinance", "provider": "none", "expiries": [], "chains": []}
+
+
 def get_quote(ticker: str, keys: dict[str, str]) -> dict:
     attempts = []
     direct = finnhub_quote(ticker, keys.get("FINNHUB_API_KEY"))
@@ -669,6 +716,19 @@ def get_ownership(ticker: str, keys: dict[str, str] | None = None) -> dict:
         prefetched.setdefault("source", "prefetched_web")
         return prefetched
     return yf_own
+
+
+def get_option_chain(ticker: str, keys: dict[str, str] | None = None) -> dict:
+    yf_chain = yfinance_option_chain(ticker)
+    if yf_chain.get("status") == "ok":
+        return yf_chain
+    prefetched = read_prefetched_json(ticker, "options")
+    if isinstance(prefetched, dict):
+        prefetched.setdefault("status", "ok")
+        prefetched.setdefault("provider", "prefetched_web")
+        prefetched.setdefault("source", "prefetched_web")
+        return prefetched
+    return yf_chain
 
 
 def get_daily_ohlcv(ticker: str, keys: dict[str, str], days: int = 252) -> dict:
