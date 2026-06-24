@@ -336,6 +336,19 @@ content and save as {TICKER}_report.html alongside the chart PNGs.
 </table>
 <p><em>Signal tested: {{SIGNAL_NAME}}. Window: {{BACKTEST_WINDOW}}. Bundle: <code>{{BACKTEST_BUNDLE_PATH}}</code>.</em></p>
 
+<h2>Options Positioning &amp; Dealer Gamma</h2>
+<!-- Fill from {TICKER}_gamma_bundle.json. If status=n/a, write: n/a — <reason>. -->
+<table>
+  <thead><tr><th>Metric</th><th>Value</th><th>Read</th></tr></thead>
+  <tbody>
+    <tr><td>Net GEX / regime</td><td></td><td>positive = vol suppression; negative = amplification</td></tr>
+    <tr><td>Gamma flip (zero-gamma)</td><td class="num"></td><td>regime-switch level</td></tr>
+    <tr><td>Call wall / put wall</td><td></td><td>resistance / support</td></tr>
+    <tr><td>Max pain</td><td class="num"></td><td>OPEX magnet</td></tr>
+  </tbody>
+</table>
+<p><strong>Implication (levels / stop width / event risk):</strong> </p>
+
 <h2>Risk and Position Sizing</h2>
 <!-- If user provided a position budget, fill the budget-aware columns.
      If user replied 'skip', omit the dollar columns and use % only. -->

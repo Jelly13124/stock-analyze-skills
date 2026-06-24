@@ -119,6 +119,8 @@ Compute over **last 4 weeks**:
 
 High short interest is **not automatically bearish** — it can fuel a short squeeze on positive catalysts. Note the setup rather than mechanically scoring it bearish.
 
+> Dealer gamma exposure (GEX), gamma flip, call/put walls, and max pain are covered in `modules/options-gamma.md`. This channel keeps only IV / put-call / skew as a near-term sentiment signal.
+
 ## Aggregation
 
 For each channel, output one of: `bullish` (+1), `neutral` (0), `bearish` (-1), with a per-channel confidence 0-100%.

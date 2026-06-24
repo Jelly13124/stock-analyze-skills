@@ -16,6 +16,7 @@ Before finalizing a `full SOP` report, verify:
 - Evidence Ledger has at least 10 items. If evidence is missing, include missing items as low-confidence or unavailable evidence.
 - Recent Catalysts table covers the last 90 days (30 for `short-term trade`, 180 for `long-term`) with the 3–7 most material items, each dated and rated (Bull/Bear/Neutral, materiality High/Med/Low). Mark `n/a — no material catalysts` only when genuinely none exist.
 - Ownership & Shareholder Structure covers float, institutional/insider %, top-holder concentration, share-class/voting, and structural short % of float (or `n/a — <reason>`).
+- Options Positioning & Dealer Gamma present when the name is optionable (net GEX, gamma flip, walls, max pain), else `n/a — not optionable`.
 - Valuation includes bear/base/bull assumptions, target ranges, sensitivity, share-count logic, net cash/debt when available, and margin of safety.
 - Technical analysis includes weekly, daily, and requested intraday tables, chart paths, support/resistance, breakout/invalidation, ATR risk band, and reward/risk.
 - Risk plan includes conservative, balanced, and aggressive frameworks when account size or risk style is unknown.
@@ -46,6 +47,7 @@ Per-section word **targets** for the report body (prose only — tables, the HTM
 | **Financial Statement Review** | **600–950** | **second deepest** — revenue/margin/EPS trend, balance sheet, cash-flow quality, GAAP vs non-GAAP, dilution/SBC |
 | Valuation Analysis | 450–700 | relative + DCF/scenario math |
 | Technical Analysis (incl. Backtest Validation) | 400–650 | the backtest sub-section is part of this budget |
+| Options Positioning & Dealer Gamma | 150–280 + table | full SOP when optionable; `n/a` otherwise |
 | Risk and Position Sizing | 350–550 | |
 | Bear/Base/Bull Scenarios | 150–280 + table | mostly the scenario table |
 | Conviction / Setup Quality Score | table + 120–220 rationale | |
@@ -188,6 +190,14 @@ If no material catalysts in the relevant window: `n/a — no material catalysts 
 - Breakout trigger:
 - Stop / invalidation:
 - ATR risk band and reward/risk:
+
+## Options Positioning & Dealer Gamma
+- Net GEX and regime (positive = vol suppression / mean-revert; negative = vol amplification / trend):
+- Gamma flip (zero-gamma) level and distance from spot:
+- Call wall / put wall (gamma-weighted) as resistance / support:
+- Max pain (OPEX magnet):
+- Implication for technical levels, stop width, and event risk (OPEX / earnings IV):
+- `n/a — <reason>` when not optionable / chain too thin
 
 ## Risk and Position Sizing
 - Risk style assumption:

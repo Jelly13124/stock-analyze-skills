@@ -6,7 +6,7 @@ Use this matrix together with the Request Gate in `stock-analysis/SKILL.md`. The
 |---|---|---|---|---|
 | basic | Quick view, ticker opinion, or a first-pass answer | valuation, technical, risk; add fundamentals if the business model drives the thesis | No | Professional self-contained HTML report, with a footer offering upgrades |
 | standard | User asks for analysis/report/target price with a normal research depth | macro, sector, company fundamentals, financial statements, valuation, technical, sentiment, ownership structure, risk | No formal debate; include one counter-thesis paragraph | Complete professional self-contained HTML report |
-| full | User asks for complete SOP, deep report, institutional-style review, multi-agent debate, or highest depth | all modules + backtest signal-validation | Yes: bull, bear, quant, risk manager, moderator; 1-3 rounds | Institutional-style HTML report with the report-template schema, charts, scorecard, event risk, evidence ledger, scenarios, backtest validation, and a debate appendix — Bull/Bear slots use an auto-selected investor-persona roster or generic roles, per Request Gate item 4 |
+| full | User asks for complete SOP, deep report, institutional-style review, multi-agent debate, or highest depth | all modules (+ options-gamma when optionable) + backtest signal-validation | Yes: bull, bear, quant, risk manager, moderator; 1-3 rounds | Institutional-style HTML report with the report-template schema, charts, scorecard, event risk, evidence ledger, scenarios, backtest validation, and a debate appendix — Bull/Bear slots use an auto-selected investor-persona roster or generic roles, per Request Gate item 4 |
 
 Minimum evidence by depth:
 

@@ -1,13 +1,13 @@
 ---
 name: stock-analysis
-description: Use when analyzing stocks, ETFs, tickers, target prices, trade strategy, valuation, DCF, technicals, KDJ/RSI/MACD/Bollinger Bands, support/resistance, breakout, earnings, 10-K/10-Q, fundamentals, sector/peer comparison, macro regime, sentiment, ownership structure / float / short interest, position sizing, stop loss, bull/bear debate, investment committee review, historical backtest (indicator strategy / signal validation / persona allocation), investor personas (Buffett/Munger/Graham/Lynch/Fisher/Wood/Druckenmiller/Burry), or HTML stock reports.
+description: Use when analyzing stocks, ETFs, tickers, target prices, trade strategy, valuation, DCF, technicals, KDJ/RSI/MACD/Bollinger Bands, support/resistance, breakout, earnings, 10-K/10-Q, fundamentals, sector/peer comparison, macro regime, sentiment, ownership structure / float / short interest, dealer gamma / GEX / max pain, position sizing, stop loss, bull/bear debate, investment committee review, historical backtest (indicator strategy / signal validation / persona allocation), investor personas (Buffett/Munger/Graham/Lynch/Fisher/Wood/Druckenmiller/Burry), or HTML stock reports.
 ---
 
 # Stock Analysis Suite
 
 ## Overview
 
-Single-skill SOP-driven US stock analysis suite. This skill is the orchestrator. It contains 19 internal modules under `modules/` (10 analytical + 8 investor personas + 1 backtest). Modules are loaded on demand via the `Read` tool; do not preload modules that the current request does not need.
+Single-skill SOP-driven US stock analysis suite. This skill is the orchestrator. It contains 20 internal modules under `modules/` (11 analytical + 8 investor personas + 1 backtest). Modules are loaded on demand via the `Read` tool; do not preload modules that the current request does not need.
 
 Use this as the main entry point for SOP-driven US stock analysis. It clarifies ambiguous requests, selects report depth, gathers current evidence, reads the relevant modules, and produces one professional self-contained HTML report. Modules can also be invoked directly when the user asks for a single sub-report ("just run the technical module on NVDA").
 
@@ -187,6 +187,7 @@ Modules are internal instruction files in `modules/`. Load them with the `Read` 
 | Charts, KDJ, RSI, MACD, BB, ATR, support/resistance, trend | `modules/technical.md` | all depths |
 | Insider trades, news flow, EPS revisions, short interest | `modules/sentiment.md` | standard, full SOP (skip basic unless asked) |
 | Ownership structure: float, institutional / insider %, top holders, share classes, short float | `modules/ownership-structure.md` | standard, full SOP |
+| Options dealer gamma (GEX), gamma flip, call/put walls, max pain | `modules/options-gamma.md` | full SOP (optionable); standard on request / short-term |
 | Position sizing, stop loss, R:R, event risk, sector cap | `modules/risk-position.md` | all depths |
 | Bull/bear debate, investment committee, persona showdown | `modules/debate-panel.md` | full SOP, or when explicitly requested |
 | Backtest signal-validation (validates technical thesis automatically) | `modules/backtest.md` (signal mode) | full SOP default; opt-in for standard |
@@ -223,6 +224,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
    - sector ETF and peer comparison
    - technical history sufficient for SMA/EMA, RSI, KDJ, MACD, Bollinger Bands, ATR, support/resistance
    - **recent news catalysts (last 90 days)** — use web search to find earnings results, guidance updates, analyst upgrades/downgrades, M&A, product launches, regulatory events, management changes, partnership news. For each candidate item, capture: date, source (with link), one-line headline, direction (Bull / Bear / Neutral), and materiality (High / Med / Low). **Apply the recency gate**: only use items with a verifiable publish date inside the last 90 days (30 days for `short-term trade`, 180 for `long-term investment`). Aim for **3–7 most material items** — do not list every PR. These feed both the dedicated *Recent Catalysts* section in the report and the *Catalyst / news quality* category in the Scoring Framework.
+   - **ownership + options data when those sections are in scope** — run `scripts/fetch_ownership.py <TICKER> --output-dir <out>` and (when optionable) `scripts/fetch_options_gamma.py <TICKER> --output-dir <out>` (no key required) and read their JSON bundles.
 4. Fetch API-based daily, weekly, and requested intraday charts:
    - Use the bundled data script: `scripts/fetch_price_charts.py <TICKER> --key-file <workspace-key-file> --output-dir <workspace>/outputs --benchmark SPY --sector <sector-etf>`.
    - In Claude.ai web, use `--output-dir auto` so the script writes to a platform-appropriate output directory.
@@ -237,7 +239,7 @@ When a persona is dispatched as a debate subagent per the Subagent Dispatch Prot
 5. **Read the modules required by depth using the Module Routing table above.** For each loaded module, apply its methodology to produce the corresponding section of the report. The module's "Standalone Markdown Report Mode" structure becomes the report section structure when invoked by the orchestrator. **The "Required for depth" column is a default starting point, not a hard mandate** — see Adaptive Module Selection below. The defaults are:
    - `basic` — `modules/valuation.md`, `modules/technical.md`, `modules/risk-position.md`. Add `modules/company-fundamentals.md` if business model materially drives the thesis.
    - `standard` — add `modules/macro.md`, `modules/sector.md`, `modules/company-fundamentals.md`, `modules/financial-statements.md`, `modules/sentiment.md`, `modules/ownership-structure.md`.
-   - `full SOP` — all of the above plus `modules/debate-panel.md` plus the backtest signal-validation step (6).
+   - `full SOP` — all of the above plus `modules/debate-panel.md` plus `modules/options-gamma.md` (when optionable) plus the backtest signal-validation step (6).
 6. **Backtest signal-validation (full SOP default, opt-in for standard).** After the Technical section identifies the strongest actionable signal (KDJ golden cross / SMA50-200 cross / RSI mean reversion / BB lower bounce / MACD signal cross / RSI oversold / volume spike / new 52w high / BB squeeze breakout), Read `modules/backtest.md` and run:
    ```
    scripts/backtest.py <TICKER> --mode signal --signal <identified_signal> --start <5y-ago> --end <today> --key-file <key> --output-dir <out> --no-charts
@@ -281,6 +283,7 @@ Before any short-term or medium-term strategy, check and disclose:
 - upcoming earnings date, guidance update, investor day, product launch, FDA/regulatory decision, litigation event, or other company-specific catalyst
 - FOMC, CPI, PCE, jobs report, GDP, or other macro events inside the selected trading window
 - unusual options implied volatility when available
+- dealer gamma regime (negative-gamma = amplified moves) and OPEX-week pin risk from `modules/options-gamma.md` when optionable
 - gap risk around after-hours or pre-market events
 
 If a major event is inside the selected trading window, reduce confidence and avoid aggressive entry language unless the user explicitly asks for event-driven trading.
@@ -418,7 +421,7 @@ See `references/strategy-registry.md`, `references/persona-criteria-v1.md`, and 
 - Match the user's language.
 - Produce a professional self-contained HTML report. Use `references/report-template.html` for structure + styling and `references/report-template.md` for the content schema and the Section Length Budget. Save the `.html` to the user's workspace folder and share a `computer://` link.
 - For `full SOP`, do not produce a short memo unless the evidence is genuinely thin. Default is rich analytical paragraphs across macro, sector, fundamentals, financial statements, valuation, technicals (with backtest validation sub-section), risk, debate. Include assumptions, evidence dates, counterarguments, sensitivity, catalysts, and explicit invalidation levels.
-- For `full SOP`, run a final report QA gate before answering. Expected sections: Data Health, Executive Summary, **Recent Catalysts (last 90 days)**, Evidence Ledger, macro, sector/peer, fundamentals, ownership structure, financials, valuation, technicals + backtest validation, risk plan, scoring, event risk, debate, bear/base/bull scenarios, final strategy, missing-data section, and disclaimer. **A section may be marked `n/a — <reason>` (one line) when it genuinely doesn't apply to this ticker** (e.g., relative-valuation peers for a unique business; macro regime for a market-neutral position). The QA gate accepts `n/a` with a reason as a valid completion state — it does not accept silent omission.
+- For `full SOP`, run a final report QA gate before answering. Expected sections: Data Health, Executive Summary, **Recent Catalysts (last 90 days)**, Evidence Ledger, macro, sector/peer, fundamentals, ownership structure, financials, valuation, technicals + backtest validation, options positioning / dealer gamma, risk plan, scoring, event risk, debate, bear/base/bull scenarios, final strategy, missing-data section, and disclaimer. **A section may be marked `n/a — <reason>` (one line) when it genuinely doesn't apply to this ticker** (e.g., relative-valuation peers for a unique business; macro regime for a market-neutral position). The QA gate accepts `n/a` with a reason as a valid completion state — it does not accept silent omission.
 - Include daily and weekly chart images when API data and chart generation are available.
 - For `basic`, give a shorter professional report with enough data to be useful. End it with the footer suggesting upgrades (full SOP / backtest / persona lens / different technical window).
 - Include exact data dates and source names when possible.
