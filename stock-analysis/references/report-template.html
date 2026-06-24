@@ -350,8 +350,8 @@ content and save as {TICKER}_report.html alongside the chart PNGs.
 <p><strong>Implication (levels / stop width / event risk):</strong> </p>
 
 <h2>Risk and Position Sizing</h2>
-<!-- If user provided a position budget, fill the budget-aware columns.
-     If user replied 'skip', omit the dollar columns and use % only. -->
+<!-- If the user gave total capital, fill the Kelly worktable + budget-aware columns.
+     If they gave a fixed amount, size to it. If they replied 'skip', omit the dollar columns and use % only. -->
 <table>
   <thead>
     <tr><th>Plan</th><th>Entry</th><th>Stop</th><th>Target</th><th>R:R</th><th>Position size</th><th>Max $ loss</th><th>Max $ gain</th></tr>
